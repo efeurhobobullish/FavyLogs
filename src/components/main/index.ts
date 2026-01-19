@@ -1,0 +1,8 @@
+export { default as Header } from "./header";
+export { default as Footer } from "./footer";
+export { default as Hero } from "./hero";
+export { default as Featured } from "./featured";
+export { default as About } from "./about";
+export { default as PlatformFeatures } from "./platform-features";
+export { default as Contact } from "./contact";
+export { default as Gallery } from "./gallery";
