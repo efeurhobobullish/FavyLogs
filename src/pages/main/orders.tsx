@@ -18,6 +18,8 @@ import { useState, useEffect } from "react";
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
+
+  // ✅ FILTER STATE (USED – NO TS ERROR)
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">(
     "all"
   );
@@ -69,21 +71,64 @@ export default function Orders() {
           {/* Header */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted hover:text-main mb-6 transition-colors font-space uppercase text-sm"
+            className="flex items-center gap-2 text-muted hover:text-main mb-6 font-space uppercase text-sm"
           >
             <ArrowLeft size={18} />
             Back
           </button>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-main uppercase font-space mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-main uppercase font-space mb-6">
             My Orders
           </h1>
 
-          {/* Orders List */}
-          {isLoading || loading ? (
-            <div className="text-center py-16">
-              <p className="text-muted">Loading orders...</p>
+          {/* ✅ FILTERS (THIS IS WHAT PREVENTS TS6133) */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div>
+              <label className="block text-xs uppercase text-muted mb-1">
+                Order Status
+              </label>
+              <select
+                value={selectedStatus}
+                onChange={(e) =>
+                  setSelectedStatus(e.target.value as OrderStatus | "all")
+                }
+                className="px-3 py-2 border border-line bg-background text-sm"
+              >
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
+
+            <div>
+              <label className="block text-xs uppercase text-muted mb-1">
+                Payment Status
+              </label>
+              <select
+                value={selectedPaymentStatus}
+                onChange={(e) =>
+                  setSelectedPaymentStatus(
+                    e.target.value as PaymentStatus | "all"
+                  )
+                }
+                className="px-3 py-2 border border-line bg-background text-sm"
+              >
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Orders */}
+          {isLoading || loading ? (
+            <p className="text-center text-muted py-16">
+              Loading orders...
+            </p>
           ) : orders.length === 0 ? (
             <div className="text-center py-16">
               <Package size={48} className="mx-auto text-muted mb-4" />
@@ -97,71 +142,41 @@ export default function Orders() {
                 return (
                   <div
                     key={order.id}
-                    className="bg-secondary p-6 border border-line hover:border-main/30 transition-all"
+                    className="bg-secondary p-6 border border-line"
                   >
                     <div className="flex items-start justify-between gap-6">
-                      {/* LEFT CONTENT (UNCHANGED) */}
+                      {/* LEFT */}
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-main uppercase font-space">
+                        <h3 className="font-space uppercase font-semibold text-main">
                           {order.name}
                         </h3>
 
-                        <p className="text-sm text-muted uppercase mb-2">
+                        <p className="text-xs uppercase text-muted mb-2">
                           {order.category}
                         </p>
 
                         <div className="flex items-center gap-2 text-xs text-muted mb-3">
                           <Calendar size={14} />
-                          Ordered on {formatDate(order.createdAt)}
+                          {formatDate(order.createdAt)}
                         </div>
 
                         <p className="text-xl font-bold text-main mb-4">
                           ₦{order.totalPrice.toLocaleString()}
                         </p>
 
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-xs uppercase text-muted flex items-center gap-1">
-                              <MapPin size={12} /> Address
-                            </p>
-                            <p className="text-main">
-                              {order.deliveryAddress.street},{" "}
-                              {order.deliveryAddress.city}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-xs uppercase text-muted flex items-center gap-1">
-                              {order.paymentMethod === "paystack" ? (
-                                <CreditCard size={12} />
-                              ) : (
-                                <Truck size={12} />
-                              )}
-                              Payment
-                            </p>
-                            <p className="uppercase text-main">
-                              {order.paymentMethod}
-                            </p>
-                          </div>
-                        </div>
-
                         <Link
                           to={`/orders/${order.id}`}
-                          className="inline-flex items-center gap-2 mt-4 text-main uppercase font-space font-semibold text-sm"
+                          className="inline-flex items-center gap-2 text-sm uppercase font-space font-semibold"
                         >
                           <Eye size={16} />
                           View Details
                         </Link>
                       </div>
 
-                      {/* RIGHT DELIVERY TIMELINE (FIXED & SMALLER) */}
+                      {/* RIGHT – DELIVERY TIMELINE */}
                       <div className="flex flex-col items-center">
                         {statusSteps.map((status, index) => {
                           const completed = index <= currentIndex;
-                          const active =
-                            index === currentIndex &&
-                            order.status !== "delivered";
-
                           const Icon =
                             status === "pending"
                               ? Clock
@@ -181,8 +196,6 @@ export default function Orders() {
                                   ${
                                     completed
                                       ? "bg-green-500 border-green-500 text-white"
-                                      : active
-                                      ? "bg-main border-main text-background"
                                       : "bg-background border-line text-muted"
                                   }`}
                               >
