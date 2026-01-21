@@ -1,14 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
-// We only import icons we KNOW you have to prevent crashes
-import { 
-  Package, 
-  ArrowLeft, 
-  Eye, 
-  Calendar, 
-  MapPin, 
-  CreditCard, 
-  Truck 
+// Safe imports only
+import {
+  Package,
+  ArrowLeft,
+  Eye,
+  Calendar,
+  MapPin,
+  CreditCard,
+  Truck,
 } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
@@ -25,13 +25,13 @@ export default function Orders() {
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
 
   const { useUserOrders, loading } = useOrder();
-  // Safety check: ensure orders defaults to empty array
+  // Safety check for data
   const { data: orders = [], isLoading } = useUserOrders(
     selectedStatus === "all" ? undefined : (selectedStatus as OrderStatus),
     selectedPaymentStatus === "all" ? undefined : (selectedPaymentStatus as PaymentStatus)
   );
 
-  // Define the timeline steps
+  // Timeline Steps
   const orderSteps: OrderStatus[] = [
     "pending",
     "processing",
@@ -169,7 +169,6 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
-                // Determine current step index
                 const currentIndex = orderSteps.indexOf(order.status as OrderStatus);
                 const isCancelled = order.status === "cancelled";
 
@@ -178,36 +177,24 @@ export default function Orders() {
                     key={order.id}
                     className="bg-secondary p-6 md:p-8 border border-line hover:border-main/30 transition-all"
                   >
-                    <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+                    <div className="flex flex-col md:flex-row gap-6 md:gap-8 justify-between">
                       
-                      {/* --- LEFT SIDE: Order Info --- */}
+                      {/* --- LEFT SIDE: Order Details --- */}
                       <div className="flex-1">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="text-lg md:text-xl font-semibold text-main uppercase font-space mb-2">
-                              {order.name}
-                            </h3>
-                            <p className="text-sm text-muted font-space uppercase mb-1">
-                              {order.category}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-muted mt-2">
-                              <Calendar size={14} />
-                              <span>Ordered on {formatDate(order.createdAt)}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Price and ID Block */}
-                          <div className="text-right">
-                            <p className="text-xl font-bold text-main font-space mb-2">
-                              ₦{order.totalPrice.toLocaleString()}
-                            </p>
-                            <p className="text-sm text-muted uppercase">
-                              #{order.id.slice(-8).toUpperCase()}
-                            </p>
+                        <div className="mb-4">
+                          <h3 className="text-lg md:text-xl font-semibold text-main uppercase font-space mb-2">
+                            {order.name}
+                          </h3>
+                          <p className="text-sm text-muted font-space uppercase mb-1">
+                            {order.category}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted mt-2">
+                            <Calendar size={14} />
+                            <span>Ordered on {formatDate(order.createdAt)}</span>
                           </div>
                         </div>
 
-                        {/* Status Badges - Payment Only */}
+                        {/* Status Badges (Payment Only) */}
                         <div className="flex flex-wrap gap-2 mb-4">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border ${getPaymentStatusColor(
@@ -216,15 +203,14 @@ export default function Orders() {
                           >
                             Payment: {order.paymentStatus}
                           </span>
-                          {/* Only show Cancelled badge if actually cancelled */}
                           {isCancelled && (
-                            <span className="px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border bg-red-500/10 text-red-600 border-red-500/20">
-                              Cancelled
-                            </span>
+                             <span className="px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border bg-red-500/10 text-red-600 border-red-500/20">
+                             Cancelled
+                           </span>
                           )}
                         </div>
 
-                        {/* Product Images */}
+                        {/* Images */}
                         {order.images && order.images.length > 0 && (
                           <div className="flex gap-2 mb-4">
                             {order.images.slice(0, 3).map((image, index) => (
@@ -249,7 +235,7 @@ export default function Orders() {
                           </div>
                         )}
 
-                        {/* Order Details */}
+                        {/* Addresses & Method */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="text-muted font-space uppercase text-xs mb-1 flex items-center gap-2">
@@ -276,51 +262,63 @@ export default function Orders() {
                         </div>
                       </div>
 
-                      {/* --- RIGHT SIDE: Vertical Timeline --- */}
-                      {/* Using simple Truck/Package icon to ensure no crashes */}
-                      {!isCancelled && (
-                        <div className="flex flex-col items-center justify-center pt-4 md:pt-0 md:pl-8 md:border-l border-line min-w-[80px]">
-                          {orderSteps.map((step, index) => {
-                            const completed = index <= currentIndex;
-                            
-                            return (
-                              <div
-                                key={step}
-                                className="flex flex-col items-center text-center relative"
-                              >
-                                {/* Circle Icon */}
-                                <div
-                                  className={`w-6 h-6 rounded-full border flex items-center justify-center z-10 transition-colors duration-300
-                                    ${
-                                      completed
-                                        ? "bg-green-600 border-green-600 text-white"
-                                        : "bg-background border-line text-muted"
-                                    }`}
-                                >
-                                  {/* Using Package icon for all steps to prevent crash */}
-                                  <Package size={12} strokeWidth={2.5} />
-                                </div>
-                                
-                                {/* Text Label */}
-                                <span className={`text-[10px] uppercase font-bold mt-1 mb-1 tracking-wider ${completed ? 'text-green-600' : 'text-muted'}`}>
-                                  {step}
-                                </span>
+                      {/* --- RIGHT SIDE: Price -> ID -> Timeline --- */}
+                      <div className="flex flex-col items-center md:items-end min-w-[120px] md:pl-8 md:border-l border-line">
+                        
+                        {/* 1. AMOUNT */}
+                        <p className="text-xl font-bold text-main font-space mb-1">
+                          ₦{order.totalPrice.toLocaleString()}
+                        </p>
+                        
+                        {/* 2. ORDER ID */}
+                        <p className="text-sm text-muted uppercase mb-6">
+                          #{order.id.slice(-8).toUpperCase()}
+                        </p>
 
-                                {/* Connecting Line */}
-                                {index !== orderSteps.length - 1 && (
+                        {/* 3. TIMELINE (Stacked underneath) */}
+                        {!isCancelled && (
+                          <div className="flex flex-col items-center w-full">
+                            {orderSteps.map((step, index) => {
+                              const completed = index <= currentIndex;
+                              
+                              return (
+                                <div
+                                  key={step}
+                                  className="flex flex-col items-center text-center relative"
+                                >
+                                  {/* Circle Icon */}
                                   <div
-                                    className={`w-0.5 h-6 my-0.5 ${
-                                      index < currentIndex 
-                                        ? "bg-green-600" 
-                                        : "bg-line"
-                                    }`}
-                                  />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                                    className={`w-6 h-6 rounded-full border flex items-center justify-center z-10 transition-colors duration-300
+                                      ${
+                                        completed
+                                          ? "bg-green-600 border-green-600 text-white"
+                                          : "bg-background border-line text-muted"
+                                      }`}
+                                  >
+                                    <Package size={12} strokeWidth={2.5} />
+                                  </div>
+                                  
+                                  {/* Text Label */}
+                                  <span className={`text-[10px] uppercase font-bold mt-1 mb-1 tracking-wider ${completed ? 'text-green-600' : 'text-muted'}`}>
+                                    {step}
+                                  </span>
+
+                                  {/* Connecting Line */}
+                                  {index !== orderSteps.length - 1 && (
+                                    <div
+                                      className={`w-0.5 h-6 my-0.5 ${
+                                        index < currentIndex 
+                                          ? "bg-green-600" 
+                                          : "bg-line"
+                                      }`}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
 
                     </div>
 
