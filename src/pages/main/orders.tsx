@@ -1,22 +1,20 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
-import {
-  Package,
-  ArrowLeft,
-  Eye,
-  Calendar,
-  MapPin,
-  CreditCard,
-  Truck,
-  Check,
-  Clock,
-  Loader2
+// We only import icons we KNOW you have to prevent crashes
+import { 
+  Package, 
+  ArrowLeft, 
+  Eye, 
+  Calendar, 
+  MapPin, 
+  CreditCard, 
+  Truck 
 } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 
-// Define types locally in case they aren't global
+// Types
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
 type PaymentStatus = "pending" | "completed" | "failed";
 
@@ -27,10 +25,19 @@ export default function Orders() {
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
 
   const { useUserOrders, loading } = useOrder();
+  // Safety check: ensure orders defaults to empty array
   const { data: orders = [], isLoading } = useUserOrders(
     selectedStatus === "all" ? undefined : (selectedStatus as OrderStatus),
     selectedPaymentStatus === "all" ? undefined : (selectedPaymentStatus as PaymentStatus)
   );
+
+  // Define the timeline steps
+  const orderSteps: OrderStatus[] = [
+    "pending",
+    "processing",
+    "shipped",
+    "delivered",
+  ];
 
   useEffect(() => {
     if (!user) {
@@ -40,7 +47,7 @@ export default function Orders() {
     }
   }, [user, checkAuth, navigate]);
 
-  const getPaymentStatusColor = (status: PaymentStatus) => {
+  const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case "completed":
         return "bg-green-500/10 text-green-600 border-green-500/20";
@@ -54,30 +61,15 @@ export default function Orders() {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  // ✅ Jumia Style Order Steps
-  const orderSteps: OrderStatus[] = [
-    "pending",
-    "processing",
-    "shipped",
-    "delivered",
-  ];
-
-  // Helper to get icon for specific step
-  const getStepIcon = (step: string) => {
-    switch (step) {
-      case "pending": return Clock;
-      case "processing": return Loader2;
-      case "shipped": return Truck;
-      case "delivered": return Check;
-      default: return Package;
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch (e) {
+      return dateString;
     }
   };
 
@@ -177,7 +169,9 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
+                // Determine current step index
                 const currentIndex = orderSteps.indexOf(order.status as OrderStatus);
+                const isCancelled = order.status === "cancelled";
 
                 return (
                   <div
@@ -201,6 +195,8 @@ export default function Orders() {
                               <span>Ordered on {formatDate(order.createdAt)}</span>
                             </div>
                           </div>
+                          
+                          {/* Price and ID Block */}
                           <div className="text-right">
                             <p className="text-xl font-bold text-main font-space mb-2">
                               ₦{order.totalPrice.toLocaleString()}
@@ -211,15 +207,21 @@ export default function Orders() {
                           </div>
                         </div>
 
-                        {/* Status Badges - Removed Status Text, kept Payment Status */}
+                        {/* Status Badges - Payment Only */}
                         <div className="flex flex-wrap gap-2 mb-4">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border ${getPaymentStatusColor(
-                              order.paymentStatus as PaymentStatus
+                              order.paymentStatus
                             )}`}
                           >
                             Payment: {order.paymentStatus}
                           </span>
+                          {/* Only show Cancelled badge if actually cancelled */}
+                          {isCancelled && (
+                            <span className="px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border bg-red-500/10 text-red-600 border-red-500/20">
+                              Cancelled
+                            </span>
+                          )}
                         </div>
 
                         {/* Product Images */}
@@ -275,48 +277,50 @@ export default function Orders() {
                       </div>
 
                       {/* --- RIGHT SIDE: Vertical Timeline --- */}
-                      {/* This is the code you wanted integrated on the right */}
-                      <div className="flex flex-col items-center justify-center pt-4 md:pt-0 md:pl-8 md:border-l border-line min-w-[100px]">
-                        {orderSteps.map((step, index) => {
-                          const completed = index <= currentIndex;
-                          const StepIcon = getStepIcon(step); // Dynamic icon based on step
-                          
-                          return (
-                            <div
-                              key={step}
-                              className="flex flex-col items-center text-center relative"
-                            >
-                              {/* Circle Icon */}
+                      {/* Using simple Truck/Package icon to ensure no crashes */}
+                      {!isCancelled && (
+                        <div className="flex flex-col items-center justify-center pt-4 md:pt-0 md:pl-8 md:border-l border-line min-w-[80px]">
+                          {orderSteps.map((step, index) => {
+                            const completed = index <= currentIndex;
+                            
+                            return (
                               <div
-                                className={`w-7 h-7 rounded-full border flex items-center justify-center z-10 transition-colors duration-300
-                                  ${
-                                    completed
-                                      ? "bg-green-600 border-green-600 text-white"
-                                      : "bg-background border-line text-muted"
-                                  }`}
+                                key={step}
+                                className="flex flex-col items-center text-center relative"
                               >
-                                <StepIcon size={12} strokeWidth={3} />
-                              </div>
-                              
-                              {/* Text Label */}
-                              <span className={`text-[10px] uppercase font-bold mt-1 mb-1 tracking-wider ${completed ? 'text-green-600' : 'text-muted'}`}>
-                                {step}
-                              </span>
-
-                              {/* Connecting Line (don't show for last item) */}
-                              {index !== orderSteps.length - 1 && (
+                                {/* Circle Icon */}
                                 <div
-                                  className={`w-0.5 h-6 my-0.5 ${
-                                    index < currentIndex 
-                                      ? "bg-green-600" // Completed line
-                                      : "bg-line"      // Incomplete line
-                                  }`}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                                  className={`w-6 h-6 rounded-full border flex items-center justify-center z-10 transition-colors duration-300
+                                    ${
+                                      completed
+                                        ? "bg-green-600 border-green-600 text-white"
+                                        : "bg-background border-line text-muted"
+                                    }`}
+                                >
+                                  {/* Using Package icon for all steps to prevent crash */}
+                                  <Package size={12} strokeWidth={2.5} />
+                                </div>
+                                
+                                {/* Text Label */}
+                                <span className={`text-[10px] uppercase font-bold mt-1 mb-1 tracking-wider ${completed ? 'text-green-600' : 'text-muted'}`}>
+                                  {step}
+                                </span>
+
+                                {/* Connecting Line */}
+                                {index !== orderSteps.length - 1 && (
+                                  <div
+                                    className={`w-0.5 h-6 my-0.5 ${
+                                      index < currentIndex 
+                                        ? "bg-green-600" 
+                                        : "bg-line"
+                                    }`}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                     </div>
 
