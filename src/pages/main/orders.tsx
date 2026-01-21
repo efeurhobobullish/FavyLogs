@@ -1,18 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
-import { 
-  Package, 
-  ArrowLeft, 
-  Eye, 
-  Calendar, 
-  MapPin, 
-  CreditCard, 
-  Truck,
-  Clock,       // Added
-  CheckCircle, // Added
-  XCircle,     // Added
-  RefreshCw    // Added
-} from "lucide-react";
+import { Package, ArrowLeft, Eye, Calendar, MapPin, CreditCard, Truck, Clock, CheckCircle, XCircle, Package as PackageIcon, RefreshCw, Truck as TruckIcon, CheckCheck } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
@@ -20,8 +8,8 @@ import { useState, useEffect } from "react";
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
   
   const { useUserOrders, loading } = useOrder();
   const { data: orders = [], isLoading } = useUserOrders(
@@ -40,68 +28,107 @@ export default function Orders() {
     }
   }, [user, checkAuth, navigate]);
 
-  // JUMIA STYLE: Helper to get Icon and Color for the right-side status
-  const getStatusDetails = (status) => {
+  const getOrderStatusConfig = (status: OrderStatus) => {
     switch (status) {
       case "pending":
         return {
           icon: Clock,
-          text: "Order Pending",
-          className: "text-yellow-600",
-          bgClass: "bg-yellow-50"
+          text: "Order Received",
+          description: "Your order has been placed",
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-50",
+          borderColor: "border-yellow-200"
         };
       case "processing":
         return {
           icon: RefreshCw,
-          text: "Processing",
-          className: "text-blue-600",
-          bgClass: "bg-blue-50"
+          text: "Processing Order",
+          description: "Preparing your items",
+          color: "text-blue-600",
+          bgColor: "bg-blue-50",
+          borderColor: "border-blue-200"
         };
       case "shipped":
         return {
-          icon: Truck,
-          text: "Out for Delivery",
-          className: "text-purple-600",
-          bgClass: "bg-purple-50"
+          icon: TruckIcon,
+          text: "Shipped",
+          description: "On the way to you",
+          color: "text-purple-600",
+          bgColor: "bg-purple-50",
+          borderColor: "border-purple-200"
         };
       case "delivered":
         return {
-          icon: CheckCircle,
+          icon: CheckCheck,
           text: "Delivered",
-          className: "text-green-600",
-          bgClass: "bg-green-50"
+          description: "Successfully delivered",
+          color: "text-green-600",
+          bgColor: "bg-green-50",
+          borderColor: "border-green-200"
         };
       case "cancelled":
         return {
           icon: XCircle,
           text: "Cancelled",
-          className: "text-red-600",
-          bgClass: "bg-red-50"
+          description: "Order was cancelled",
+          color: "text-red-600",
+          bgColor: "bg-red-50",
+          borderColor: "border-red-200"
         };
       default:
         return {
-          icon: Package,
-          text: status,
-          className: "text-gray-600",
-          bgClass: "bg-gray-50"
+          icon: PackageIcon,
+          text: "Processing",
+          description: "Order in progress",
+          color: "text-gray-600",
+          bgColor: "bg-gray-50",
+          borderColor: "border-gray-200"
         };
     }
   };
 
-  const getPaymentStatusColor = (status) => {
+  const getPaymentStatusConfig = (status: PaymentStatus) => {
     switch (status) {
       case "completed":
-        return "bg-green-500/10 text-green-600 border-green-500/20";
+        return {
+          icon: CheckCircle,
+          text: "Paid",
+          description: "Payment successful",
+          color: "text-green-600",
+          bgColor: "bg-green-50",
+          borderColor: "border-green-200"
+        };
       case "pending":
-        return "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
+        return {
+          icon: Clock,
+          text: "Pending Payment",
+          description: "Awaiting payment",
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-50",
+          borderColor: "border-yellow-200"
+        };
       case "failed":
-        return "bg-red-500/10 text-red-600 border-red-500/20";
+        return {
+          icon: XCircle,
+          text: "Payment Failed",
+          description: "Payment unsuccessful",
+          color: "text-red-600",
+          bgColor: "bg-red-50",
+          borderColor: "border-red-200"
+        };
       default:
-        return "bg-gray-500/10 text-gray-600 border-gray-500/20";
+        return {
+          icon: Clock,
+          text: "Processing",
+          description: "Payment in progress",
+          color: "text-gray-600",
+          bgColor: "bg-gray-50",
+          borderColor: "border-gray-200"
+        };
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -151,11 +178,11 @@ export default function Orders() {
               </label>
               <select
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus | "all")}
                 className="px-4 py-2 border border-line bg-background text-main font-space focus:outline-none focus:border-main transition-colors text-sm"
               >
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
+                <option value="pending">Order Received</option>
                 <option value="processing">Processing</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
@@ -168,13 +195,13 @@ export default function Orders() {
               </label>
               <select
                 value={selectedPaymentStatus}
-                onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                onChange={(e) => setSelectedPaymentStatus(e.target.value as PaymentStatus | "all")}
                 className="px-4 py-2 border border-line bg-background text-main font-space focus:outline-none focus:border-main transition-colors text-sm"
               >
                 <option value="all">All Payments</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
+                <option value="pending">Pending Payment</option>
+                <option value="completed">Paid</option>
+                <option value="failed">Payment Failed</option>
               </select>
             </div>
           </div>
@@ -206,9 +233,10 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
-                // Get the status icon and details
-                const statusDetails = getStatusDetails(order.status);
-                const StatusIcon = statusDetails.icon;
+                const orderStatus = getOrderStatusConfig(order.status);
+                const paymentStatus = getPaymentStatusConfig(order.paymentStatus);
+                const OrderStatusIcon = orderStatus.icon;
+                const PaymentStatusIcon = paymentStatus.icon;
 
                 return (
                   <div
@@ -216,7 +244,7 @@ export default function Orders() {
                     className="bg-secondary p-6 md:p-8 border border-line hover:border-main/30 transition-all"
                   >
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                      {/* Order Info Left */}
+                      {/* Order Info */}
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-4">
                           <div>
@@ -231,35 +259,47 @@ export default function Orders() {
                               <span>Ordered on {formatDate(order.createdAt)}</span>
                             </div>
                           </div>
-                          
-                          {/* NEW: Right Side Status & Price Block */}
-                          <div className="text-right flex flex-col items-end">
-                            {/* Jumia Style Status Indicator */}
-                            <div className={`flex items-center gap-1.5 mb-2 ${statusDetails.className}`}>
-                              <StatusIcon size={16} className="stroke-[2.5]" />
-                              <span className="text-xs md:text-sm font-space font-bold uppercase tracking-wide">
-                                {statusDetails.text}
-                              </span>
-                            </div>
-
-                            <p className="text-xl font-bold text-main font-space mb-1">
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-main font-space mb-2">
                               ₦{order.totalPrice.toLocaleString()}
                             </p>
-                            <p className="text-xs text-muted uppercase">
-                              #{order.id.slice(-8).toUpperCase()}
+                            <p className="text-sm text-muted">
+                              Order #{order.id.slice(-8).toUpperCase()}
                             </p>
                           </div>
                         </div>
 
-                        {/* Status Badges - REMOVED the main status pill, kept payment status */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border ${getPaymentStatusColor(
-                              order.paymentStatus
-                            )}`}
-                          >
-                            Payment: {order.paymentStatus}
-                          </span>
+                        {/* Status Indicators - Updated like Jumia/Amazon */}
+                        <div className="flex flex-wrap gap-4 mb-4">
+                          {/* Order Status */}
+                          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${orderStatus.borderColor} ${orderStatus.bgColor}`}>
+                            <div className={`p-2 rounded-full ${orderStatus.bgColor}`}>
+                              <OrderStatusIcon size={18} className={orderStatus.color} />
+                            </div>
+                            <div>
+                              <p className={`text-sm font-semibold font-space ${orderStatus.color}`}>
+                                {orderStatus.text}
+                              </p>
+                              <p className="text-xs text-muted">
+                                {orderStatus.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Payment Status */}
+                          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${paymentStatus.borderColor} ${paymentStatus.bgColor}`}>
+                            <div className={`p-2 rounded-full ${paymentStatus.bgColor}`}>
+                              <PaymentStatusIcon size={18} className={paymentStatus.color} />
+                            </div>
+                            <div>
+                              <p className={`text-sm font-semibold font-space ${paymentStatus.color}`}>
+                                {paymentStatus.text}
+                              </p>
+                              <p className="text-xs text-muted">
+                                {paymentStatus.description}
+                              </p>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Product Images */}
@@ -339,6 +379,16 @@ export default function Orders() {
                       {order.status === "pending" && order.paymentStatus === "pending" && (
                         <button className="px-4 py-2 border border-line text-main font-space font-semibold uppercase text-sm hover:bg-secondary transition-colors">
                           Cancel Order
+                        </button>
+                      )}
+                      {order.status === "shipped" && (
+                        <button className="px-4 py-2 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors">
+                          Track Order
+                        </button>
+                      )}
+                      {order.status === "delivered" && (
+                        <button className="px-4 py-2 border border-line text-main font-space font-semibold uppercase text-sm hover:bg-secondary transition-colors">
+                          Rate Product
                         </button>
                       )}
                     </div>
