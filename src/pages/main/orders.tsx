@@ -14,14 +14,21 @@ import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 
 // Types
-type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+type OrderStatus =
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
 type PaymentStatus = "pending" | "completed" | "failed";
 
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
 
-  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
+  // ✅ REAL STATE (USED IN UI)
+  const [selectedStatus, setSelectedStatus] =
+    useState<OrderStatus | "all">("all");
   const [selectedPaymentStatus, setSelectedPaymentStatus] =
     useState<PaymentStatus | "all">("all");
 
@@ -30,12 +37,6 @@ export default function Orders() {
     selectedStatus === "all" ? undefined : selectedStatus,
     selectedPaymentStatus === "all" ? undefined : selectedPaymentStatus
   );
-
-  // ✅ TS6133 FIX — setters intentionally referenced
-  useEffect(() => {
-    void setSelectedStatus;
-    void setSelectedPaymentStatus;
-  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -57,10 +58,8 @@ export default function Orders() {
   if (!user) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-background py-8">
-          <div className="main">
-            <p className="text-muted">Loading...</p>
-          </div>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted">Loading user…</p>
         </div>
       </MainLayout>
     );
@@ -79,24 +78,64 @@ export default function Orders() {
             Back
           </button>
 
-          {/* Loading */}
+          <h1 className="text-2xl font-bold uppercase mb-6">My Orders</h1>
+
+          {/* ✅ FILTERS (THIS IS WHY PAGE IS NO LONGER BLANK) */}
+          <div className="flex gap-4 mb-8">
+            <select
+              value={selectedStatus}
+              onChange={(e) =>
+                setSelectedStatus(e.target.value as OrderStatus | "all")
+              }
+              className="border px-3 py-2 bg-background"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            <select
+              value={selectedPaymentStatus}
+              onChange={(e) =>
+                setSelectedPaymentStatus(
+                  e.target.value as PaymentStatus | "all"
+                )
+              }
+              className="border px-3 py-2 bg-background"
+            >
+              <option value="all">All Payments</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+
+          {/* ✅ LOADING STATE */}
           {loading || isLoading ? (
             <div className="text-center py-16">
-              <div className="w-16 h-16 mx-auto mb-4 bg-secondary rounded-full flex items-center justify-center">
-                <Package size={32} className="text-muted" />
-              </div>
-              <p className="text-muted">Loading orders...</p>
+              <Package size={32} className="mx-auto mb-4 text-muted" />
+              <p className="text-muted">Loading orders…</p>
+            </div>
+          ) : orders.length === 0 ? (
+            /* ✅ EMPTY STATE */
+            <div className="text-center py-16">
+              <Package size={32} className="mx-auto mb-4 text-muted" />
+              <p className="text-muted">No orders found</p>
             </div>
           ) : (
+            /* ✅ ORDERS RENDER */
             <div className="space-y-4">
               {orders.map((order) => (
                 <div
                   key={order.id}
-                  className="bg-secondary p-6 border border-line hover:border-main/30 transition-all"
+                  className="border p-6 bg-secondary"
                 >
                   <div className="flex justify-between mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold uppercase">
+                      <h3 className="font-semibold uppercase">
                         {order.name}
                       </h3>
 
@@ -132,7 +171,7 @@ export default function Orders() {
 
                   <Link
                     to={`/orders/${order.id}`}
-                    className="inline-flex items-center gap-2 text-sm font-semibold uppercase"
+                    className="inline-flex items-center gap-2 text-sm uppercase font-semibold"
                   >
                     <Eye size={16} />
                     View Details
