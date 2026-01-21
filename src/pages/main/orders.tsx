@@ -20,7 +20,6 @@ export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
 
-  // Filters (USED)
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
   const [selectedPaymentStatus, setSelectedPaymentStatus] =
     useState<PaymentStatus | "all">("all");
@@ -59,22 +58,18 @@ export default function Orders() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
-  };
 
   if (!user) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-background py-8">
-          <div className="main">
-            <p className="text-muted">Loading...</p>
-          </div>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted">Loading...</p>
         </div>
       </MainLayout>
     );
@@ -82,46 +77,38 @@ export default function Orders() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-background py-8">
+      <div className="min-h-screen py-8 bg-background">
         <div className="main">
           {/* Header */}
-          <div className="mb-8">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-muted hover:text-main mb-6 uppercase text-sm"
-            >
-              <ArrowLeft size={18} />
-              Back
-            </button>
-            <h1 className="text-2xl font-bold uppercase mb-1">My Orders</h1>
-            <p className="text-muted">View and track all your orders</p>
-          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-muted mb-6 uppercase text-sm"
+          >
+            <ArrowLeft size={18} /> Back
+          </button>
 
-          {/* Filters (USES SETTERS) */}
+          {/* Filters */}
           <div className="mb-6 flex gap-4">
             <select
               value={selectedStatus}
               onChange={(e) =>
                 setSelectedStatus(e.target.value as OrderStatus | "all")
               }
-              className="px-4 py-2 border bg-background text-sm"
+              className="px-4 py-2 border"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="processing">Processing</option>
               <option value="shipped">Shipped</option>
               <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
             </select>
 
             <select
               value={selectedPaymentStatus}
               onChange={(e) =>
-                setSelectedPaymentStatus(
-                  e.target.value as PaymentStatus | "all"
-                )
+                setSelectedPaymentStatus(e.target.value as PaymentStatus | "all")
               }
-              className="px-4 py-2 border bg-background text-sm"
+              className="px-4 py-2 border"
             >
               <option value="all">All Payments</option>
               <option value="pending">Pending</option>
@@ -143,7 +130,7 @@ export default function Orders() {
                     key={order.id}
                     className="bg-secondary p-6 border border-line"
                   >
-                    {/* Header row */}
+                    {/* TOP */}
                     <div className="flex justify-between mb-4">
                       <div>
                         <h3 className="font-semibold uppercase">{order.name}</h3>
@@ -156,33 +143,33 @@ export default function Orders() {
                         </div>
                       </div>
 
-                      {/* PRICE + ID + TIMELINE */}
+                      {/* PRICE + ID (STABLE) */}
                       <div className="text-right">
                         <p className="text-xl font-bold">
                           ₦{order.totalPrice.toLocaleString()}
                         </p>
-                        <p className="text-sm text-muted uppercase mb-2">
+                        <p className="text-sm text-muted uppercase whitespace-nowrap">
                           #{order.id.slice(-8).toUpperCase()}
                         </p>
 
+                        {/* TIMELINE UNDER ID */}
                         {order.status !== "cancelled" && (
-                          <div className="flex flex-col items-end">
+                          <div className="mt-2 flex flex-col items-end">
                             {orderSteps.map((step, index) => {
                               const completed = index <= currentIndex;
                               return (
                                 <div key={step} className="flex flex-col items-center">
                                   <div
-                                    className={`w-4 h-4 rounded-full border flex items-center justify-center
-                                      ${
-                                        completed
-                                          ? "bg-green-600 border-green-600 text-white"
-                                          : "bg-background border-line text-muted"
-                                      }`}
+                                    className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                      completed
+                                        ? "bg-green-600 border-green-600 text-white"
+                                        : "bg-background border-line text-muted"
+                                    }`}
                                   >
                                     <Package size={10} />
                                   </div>
                                   <span
-                                    className={`text-[10px] uppercase font-bold mt-1 ${
+                                    className={`text-[10px] uppercase mt-1 ${
                                       completed ? "text-green-600" : "text-muted"
                                     }`}
                                   >
@@ -203,7 +190,7 @@ export default function Orders() {
                       </div>
                     </div>
 
-                    {/* Payment badge */}
+                    {/* Payment */}
                     <span
                       className={`px-3 py-1 rounded-full text-xs uppercase border ${getPaymentStatusColor(
                         order.paymentStatus
@@ -255,7 +242,7 @@ export default function Orders() {
                       </div>
                     </div>
 
-                    {/* Actions */}
+                    {/* Action */}
                     <div className="pt-4 border-t mt-4 flex justify-between">
                       <Link
                         to={`/orders/${order.id}`}
