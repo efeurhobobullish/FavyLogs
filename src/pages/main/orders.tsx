@@ -19,7 +19,7 @@ export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
 
-  // ✅ FILTER STATE (USED – NO TS ERROR)
+  // ✅ FILTER STATE (USED)
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">(
     "all"
   );
@@ -81,7 +81,7 @@ export default function Orders() {
             My Orders
           </h1>
 
-          {/* ✅ FILTERS (THIS IS WHAT PREVENTS TS6133) */}
+          {/* ✅ FILTERS (PREVENT TS6133) */}
           <div className="flex flex-wrap gap-4 mb-6">
             <div>
               <label className="block text-xs uppercase text-muted mb-1">
@@ -126,9 +126,7 @@ export default function Orders() {
 
           {/* Orders */}
           {isLoading || loading ? (
-            <p className="text-center text-muted py-16">
-              Loading orders...
-            </p>
+            <p className="text-center text-muted py-16">Loading orders...</p>
           ) : orders.length === 0 ? (
             <div className="text-center py-16">
               <Package size={48} className="mx-auto text-muted mb-4" />
@@ -145,7 +143,7 @@ export default function Orders() {
                     className="bg-secondary p-6 border border-line"
                   >
                     <div className="flex items-start justify-between gap-6">
-                      {/* LEFT */}
+                      {/* LEFT CONTENT */}
                       <div className="flex-1">
                         <h3 className="font-space uppercase font-semibold text-main">
                           {order.name}
@@ -155,14 +153,31 @@ export default function Orders() {
                           {order.category}
                         </p>
 
-                        <div className="flex items-center gap-2 text-xs text-muted mb-3">
+                        <div className="flex items-center gap-2 text-xs text-muted mb-2">
                           <Calendar size={14} />
                           {formatDate(order.createdAt)}
                         </div>
 
-                        <p className="text-xl font-bold text-main mb-4">
+                        <p className="text-xl font-bold text-main mb-3">
                           ₦{order.totalPrice.toLocaleString()}
                         </p>
+
+                        {/* ✅ MapPin USED */}
+                        <div className="flex items-center gap-2 text-sm text-muted mb-2">
+                          <MapPin size={14} />
+                          <span>
+                            {order.deliveryAddress.street},{" "}
+                            {order.deliveryAddress.city}
+                          </span>
+                        </div>
+
+                        {/* ✅ CreditCard USED */}
+                        <div className="flex items-center gap-2 text-sm text-muted mb-4">
+                          <CreditCard size={14} />
+                          <span className="uppercase">
+                            {order.paymentMethod}
+                          </span>
+                        </div>
 
                         <Link
                           to={`/orders/${order.id}`}
@@ -173,7 +188,7 @@ export default function Orders() {
                         </Link>
                       </div>
 
-                      {/* RIGHT – DELIVERY TIMELINE */}
+                      {/* RIGHT DELIVERY TIMELINE */}
                       <div className="flex flex-col items-center">
                         {statusSteps.map((status, index) => {
                           const completed = index <= currentIndex;
