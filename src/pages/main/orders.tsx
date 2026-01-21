@@ -11,8 +11,7 @@ import {
   Clock,       // Icon for Pending
   CheckCircle, // Icon for Delivered
   XCircle,     // Icon for Cancelled
-  RefreshCw,   // Icon for Processing
-  AlertCircle  // Icon for Failed/Issues
+  RefreshCw  // Icon for Failed/Issues
 } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
