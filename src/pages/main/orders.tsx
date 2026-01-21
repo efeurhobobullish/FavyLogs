@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
-// Safe imports only
+// Using only the icons from your original working code to prevent import crashes
 import {
   Package,
   ArrowLeft,
@@ -21,11 +21,14 @@ type PaymentStatus = "pending" | "completed" | "failed";
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
+  
+  // Initialize state
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
 
   const { useUserOrders, loading } = useOrder();
-  // Safety check for data
+  
+  // SAFETY 1: Default 'orders' to empty array to prevent map crashes
   const { data: orders = [], isLoading } = useUserOrders(
     selectedStatus === "all" ? undefined : (selectedStatus as OrderStatus),
     selectedPaymentStatus === "all" ? undefined : (selectedPaymentStatus as PaymentStatus)
@@ -39,6 +42,7 @@ export default function Orders() {
     "delivered",
   ];
 
+  // Auth Check
   useEffect(() => {
     if (!user) {
       checkAuth().then((authUser) => {
@@ -47,6 +51,7 @@ export default function Orders() {
     }
   }, [user, checkAuth, navigate]);
 
+  // Helpers
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case "completed":
@@ -61,18 +66,16 @@ export default function Orders() {
   };
 
   const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch (e) {
-      return dateString;
-    }
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
+  // Loading State
   if (!user) {
     return (
       <MainLayout>
@@ -169,12 +172,20 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
-                const currentIndex = orderSteps.indexOf(order.status as OrderStatus);
-                const isCancelled = order.status === "cancelled";
+                // SAFETY 2: Optional chaining to prevent crashes if data is malformed
+                if (!order) return null;
 
+                const status = order.status as OrderStatus;
+                const currentIndex = orderSteps.indexOf(status);
+                const isCancelled = status === "cancelled";
+                
+                // Safe formatting
+                const formattedPrice = order.totalPrice?.toLocaleString() ?? "0.00";
+                const orderId = order.id ? `#${order.id.slice(-8).toUpperCase()}` : "N/A";
+                
                 return (
                   <div
-                    key={order.id}
+                    key={order.id || Math.random()}
                     className="bg-secondary p-6 md:p-8 border border-line hover:border-main/30 transition-all"
                   >
                     <div className="flex flex-col md:flex-row gap-6 md:gap-8 justify-between">
@@ -183,10 +194,10 @@ export default function Orders() {
                       <div className="flex-1">
                         <div className="mb-4">
                           <h3 className="text-lg md:text-xl font-semibold text-main uppercase font-space mb-2">
-                            {order.name}
+                            {order.name || "Order Item"}
                           </h3>
                           <p className="text-sm text-muted font-space uppercase mb-1">
-                            {order.category}
+                            {order.category || "General"}
                           </p>
                           <div className="flex items-center gap-2 text-xs text-muted mt-2">
                             <Calendar size={14} />
@@ -194,14 +205,14 @@ export default function Orders() {
                           </div>
                         </div>
 
-                        {/* Status Badges (Payment Only) */}
+                        {/* Status Badges (Payment Only + Cancelled Label) */}
                         <div className="flex flex-wrap gap-2 mb-4">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border ${getPaymentStatusColor(
-                              order.paymentStatus
+                              order.paymentStatus || "pending"
                             )}`}
                           >
-                            Payment: {order.paymentStatus}
+                            Payment: {order.paymentStatus || "Pending"}
                           </span>
                           {isCancelled && (
                              <span className="px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border bg-red-500/10 text-red-600 border-red-500/20">
@@ -210,7 +221,7 @@ export default function Orders() {
                           )}
                         </div>
 
-                        {/* Images */}
+                        {/* Images - SAFETY 3: Checks for images existence */}
                         {order.images && order.images.length > 0 && (
                           <div className="flex gap-2 mb-4">
                             {order.images.slice(0, 3).map((image, index) => (
@@ -220,7 +231,7 @@ export default function Orders() {
                               >
                                 <img
                                   src={image}
-                                  alt={`${order.name} - Image ${index + 1}`}
+                                  alt={`Product ${index + 1}`}
                                   className="w-full h-full object-cover"
                                 />
                               </div>
@@ -235,7 +246,7 @@ export default function Orders() {
                           </div>
                         )}
 
-                        {/* Addresses & Method */}
+                        {/* Addresses & Method - SAFETY 4: Optional chaining on nested objects */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="text-muted font-space uppercase text-xs mb-1 flex items-center gap-2">
@@ -243,7 +254,8 @@ export default function Orders() {
                               Delivery Address
                             </p>
                             <p className="text-main">
-                              {order.deliveryAddress.street}, {order.deliveryAddress.city}, {order.deliveryAddress.state}
+                              {/* Using ?. to prevent crash if deliveryAddress is missing */}
+                              {order.deliveryAddress?.street || ""}, {order.deliveryAddress?.city || ""}, {order.deliveryAddress?.state || ""}
                             </p>
                           </div>
                           <div>
@@ -267,12 +279,12 @@ export default function Orders() {
                         
                         {/* 1. AMOUNT */}
                         <p className="text-xl font-bold text-main font-space mb-1">
-                          ₦{order.totalPrice.toLocaleString()}
+                          ₦{formattedPrice}
                         </p>
                         
                         {/* 2. ORDER ID */}
                         <p className="text-sm text-muted uppercase mb-6">
-                          #{order.id.slice(-8).toUpperCase()}
+                          {orderId}
                         </p>
 
                         {/* 3. TIMELINE (Stacked underneath) */}
