@@ -8,36 +8,35 @@ import {
   MapPin, 
   CreditCard, 
   Truck,
-  Clock,
-  CheckCircle,
-  XCircle,
-  RefreshCw
+  Clock,       // Icon for Pending
+  CheckCircle, // Icon for Delivered
+  XCircle,     // Icon for Cancelled
+  RefreshCw,   // Icon for Processing
+  AlertCircle  // Icon for Failed/Issues
 } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 
-// Assuming these types are defined in your project. 
-// If not, you can uncomment the interfaces below:
-// type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-// type PaymentStatus = "pending" | "completed" | "failed";
+// Define types locally to avoid TS errors if they aren't global
+type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+type PaymentStatus = "pending" | "completed" | "failed";
 
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
   
-  // FIX 1: Add types to useState
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
   
   const { useUserOrders, loading } = useOrder();
   
-  // FIX 2: Type assertion for the hook arguments
   const { data: orders = [], isLoading } = useUserOrders(
     selectedStatus === "all" ? undefined : (selectedStatus as OrderStatus),
     selectedPaymentStatus === "all" ? undefined : (selectedPaymentStatus as PaymentStatus)
   );
 
+  // Check auth on mount
   useEffect(() => {
     if (!user) {
       checkAuth().then((authUser) => {
@@ -48,55 +47,53 @@ export default function Orders() {
     }
   }, [user, checkAuth, navigate]);
 
-  // FIX 3: Add type annotation to parameter
+  // JUMIA STYLE: Helper to get Icon and specific color styles
   const getStatusDetails = (status: OrderStatus) => {
     switch (status) {
       case "pending":
         return {
           icon: Clock,
-          text: "Order Pending",
-          className: "text-yellow-600",
-          bgClass: "bg-yellow-50"
+          label: "Order Placed",
+          // Jumia uses Orange/Yellow for pending
+          className: "text-orange-600 bg-orange-50 border-orange-200"
         };
       case "processing":
         return {
           icon: RefreshCw,
-          text: "Processing",
-          className: "text-blue-600",
-          bgClass: "bg-blue-50"
+          label: "Processing",
+          // Blue for processing
+          className: "text-blue-600 bg-blue-50 border-blue-200"
         };
       case "shipped":
         return {
           icon: Truck,
-          text: "Out for Delivery",
-          className: "text-purple-600",
-          bgClass: "bg-purple-50"
+          label: "Out for Delivery",
+          // Purple or Dark Blue for shipping
+          className: "text-purple-600 bg-purple-50 border-purple-200"
         };
       case "delivered":
         return {
           icon: CheckCircle,
-          text: "Delivered",
-          className: "text-green-600",
-          bgClass: "bg-green-50"
+          label: "Delivered",
+          // Green for success
+          className: "text-green-600 bg-green-50 border-green-200"
         };
       case "cancelled":
         return {
           icon: XCircle,
-          text: "Cancelled",
-          className: "text-red-600",
-          bgClass: "bg-red-50"
+          label: "Cancelled",
+          // Red for cancelled
+          className: "text-red-600 bg-red-50 border-red-200"
         };
       default:
         return {
           icon: Package,
-          text: status,
-          className: "text-gray-600",
-          bgClass: "bg-gray-50"
+          label: status,
+          className: "text-gray-600 bg-gray-50 border-gray-200"
         };
     }
   };
 
-  // FIX 4: Add type annotation to parameter
   const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
       case "completed":
@@ -110,7 +107,6 @@ export default function Orders() {
     }
   };
 
-  // FIX 5: Add type annotation to parameter
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -161,7 +157,6 @@ export default function Orders() {
               </label>
               <select
                 value={selectedStatus}
-                // FIX 6: Cast event value
                 onChange={(e) => setSelectedStatus(e.target.value as OrderStatus | "all")}
                 className="px-4 py-2 border border-line bg-background text-main font-space focus:outline-none focus:border-main transition-colors text-sm"
               >
@@ -179,7 +174,6 @@ export default function Orders() {
               </label>
               <select
                 value={selectedPaymentStatus}
-                // FIX 7: Cast event value
                 onChange={(e) => setSelectedPaymentStatus(e.target.value as PaymentStatus | "all")}
                 className="px-4 py-2 border border-line bg-background text-main font-space focus:outline-none focus:border-main transition-colors text-sm"
               >
@@ -218,7 +212,8 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
-                const statusDetails = getStatusDetails(order.status);
+                // Determine styling based on status
+                const statusDetails = getStatusDetails(order.status as OrderStatus);
                 const StatusIcon = statusDetails.icon;
 
                 return (
@@ -227,7 +222,8 @@ export default function Orders() {
                     className="bg-secondary p-6 md:p-8 border border-line hover:border-main/30 transition-all"
                   >
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                      {/* Order Info */}
+                      
+                      {/* LEFT SIDE: Order Info */}
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-4">
                           <div>
@@ -243,29 +239,36 @@ export default function Orders() {
                             </div>
                           </div>
                           
-                          {/* Right Side Status & Price */}
+                          {/* RIGHT SIDE: Price, ID, and NOW Status underneath */}
                           <div className="text-right flex flex-col items-end">
-                            <div className={`flex items-center gap-1.5 mb-2 ${statusDetails.className}`}>
-                              <StatusIcon size={16} className="stroke-[2.5]" />
-                              <span className="text-xs md:text-sm font-space font-bold uppercase tracking-wide">
-                                {statusDetails.text}
-                              </span>
-                            </div>
-
-                            <p className="text-xl font-bold text-main font-space mb-1">
+                            {/* 1. Price */}
+                            <p className="text-xl font-bold text-main font-space">
                               ₦{order.totalPrice.toLocaleString()}
                             </p>
-                            <p className="text-xs text-muted uppercase">
+                            
+                            {/* 2. Order ID */}
+                            <p className="text-xs text-muted uppercase mb-3">
                               #{order.id.slice(-8).toUpperCase()}
                             </p>
+
+                            {/* 3. NEW STATUS INDICATOR (Below Price) */}
+                            <div className={`
+                              flex items-center gap-2 px-3 py-1.5 rounded-md border 
+                              ${statusDetails.className}
+                            `}>
+                              <StatusIcon size={14} className="stroke-[2.5]" />
+                              <span className="text-xs font-space font-bold uppercase tracking-wide">
+                                {statusDetails.label}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Status Badges */}
+                        {/* Status Badges (Payment Only - Left side) */}
                         <div className="flex flex-wrap gap-2 mb-4">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border ${getPaymentStatusColor(
-                              order.paymentStatus
+                              order.paymentStatus as PaymentStatus
                             )}`}
                           >
                             Payment: {order.paymentStatus}
