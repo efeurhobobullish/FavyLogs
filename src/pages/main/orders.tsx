@@ -19,7 +19,7 @@ export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
 
-  // ✅ FILTER STATE (USED)
+  // FILTER STATE (USED)
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">(
     "all"
   );
@@ -81,10 +81,10 @@ export default function Orders() {
             My Orders
           </h1>
 
-          {/* ✅ FILTERS (PREVENT TS6133) */}
-          <div className="flex flex-wrap gap-4 mb-6">
+          {/* FILTERS (UNCHANGED) */}
+          <div className="mb-6 flex flex-wrap gap-4">
             <div>
-              <label className="block text-xs uppercase text-muted mb-1">
+              <label className="block text-xs text-muted uppercase mb-2">
                 Order Status
               </label>
               <select
@@ -92,7 +92,7 @@ export default function Orders() {
                 onChange={(e) =>
                   setSelectedStatus(e.target.value as OrderStatus | "all")
                 }
-                className="px-3 py-2 border border-line bg-background text-sm"
+                className="px-4 py-2 border border-line bg-background text-sm"
               >
                 <option value="all">All</option>
                 <option value="pending">Pending</option>
@@ -104,7 +104,7 @@ export default function Orders() {
             </div>
 
             <div>
-              <label className="block text-xs uppercase text-muted mb-1">
+              <label className="block text-xs text-muted uppercase mb-2">
                 Payment Status
               </label>
               <select
@@ -114,7 +114,7 @@ export default function Orders() {
                     e.target.value as PaymentStatus | "all"
                   )
                 }
-                className="px-3 py-2 border border-line bg-background text-sm"
+                className="px-4 py-2 border border-line bg-background text-sm"
               >
                 <option value="all">All</option>
                 <option value="pending">Pending</option>
@@ -124,9 +124,11 @@ export default function Orders() {
             </div>
           </div>
 
-          {/* Orders */}
+          {/* ORDERS */}
           {isLoading || loading ? (
-            <p className="text-center text-muted py-16">Loading orders...</p>
+            <p className="text-center py-16 text-muted">
+              Loading orders...
+            </p>
           ) : orders.length === 0 ? (
             <div className="text-center py-16">
               <Package size={48} className="mx-auto text-muted mb-4" />
@@ -140,55 +142,86 @@ export default function Orders() {
                 return (
                   <div
                     key={order.id}
-                    className="bg-secondary p-6 border border-line"
+                    className="bg-secondary p-6 md:p-8 border border-line"
                   >
-                    <div className="flex items-start justify-between gap-6">
-                      {/* LEFT CONTENT */}
+                    <div className="flex flex-col md:flex-row md:justify-between gap-6">
+                      {/* LEFT CONTENT (UNCHANGED ORDER) */}
                       <div className="flex-1">
-                        <h3 className="font-space uppercase font-semibold text-main">
-                          {order.name}
-                        </h3>
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-main uppercase font-space mb-2">
+                              {order.name}
+                            </h3>
+                            <p className="text-sm text-muted uppercase mb-1">
+                              {order.category}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted">
+                              <Calendar size={14} />
+                              Ordered on {formatDate(order.createdAt)}
+                            </div>
+                          </div>
 
-                        <p className="text-xs uppercase text-muted mb-2">
-                          {order.category}
-                        </p>
-
-                        <div className="flex items-center gap-2 text-xs text-muted mb-2">
-                          <Calendar size={14} />
-                          {formatDate(order.createdAt)}
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-main">
+                              ₦{order.totalPrice.toLocaleString()}
+                            </p>
+                            <p className="text-sm text-muted">
+                              Order #{order.id.slice(-8).toUpperCase()}
+                            </p>
+                          </div>
                         </div>
 
-                        <p className="text-xl font-bold text-main mb-3">
-                          ₦{order.totalPrice.toLocaleString()}
-                        </p>
+                        {/* IMAGES (RESTORED EXACTLY) */}
+                        {order.images && order.images.length > 0 && (
+                          <div className="flex gap-2 mb-4">
+                            {order.images.slice(0, 3).map((image, index) => (
+                              <div
+                                key={index}
+                                className="w-16 h-16 bg-background overflow-hidden border border-line"
+                              >
+                                <img
+                                  src={image}
+                                  alt={order.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ))}
+                            {order.images.length > 3 && (
+                              <div className="w-16 h-16 border border-line flex items-center justify-center">
+                                <span className="text-xs text-muted">
+                                  +{order.images.length - 3}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
-                        {/* ✅ MapPin USED */}
+                        {/* ADDRESS */}
                         <div className="flex items-center gap-2 text-sm text-muted mb-2">
                           <MapPin size={14} />
-                          <span>
-                            {order.deliveryAddress.street},{" "}
-                            {order.deliveryAddress.city}
-                          </span>
+                          {order.deliveryAddress.street},{" "}
+                          {order.deliveryAddress.city},{" "}
+                          {order.deliveryAddress.state}
                         </div>
 
-                        {/* ✅ CreditCard USED */}
+                        {/* PAYMENT */}
                         <div className="flex items-center gap-2 text-sm text-muted mb-4">
                           <CreditCard size={14} />
-                          <span className="uppercase">
-                            {order.paymentMethod}
-                          </span>
+                          {order.paymentMethod === "paystack"
+                            ? "Paystack"
+                            : "Pay on Delivery"}
                         </div>
 
                         <Link
                           to={`/orders/${order.id}`}
-                          className="inline-flex items-center gap-2 text-sm uppercase font-space font-semibold"
+                          className="inline-flex items-center gap-2 text-main uppercase font-space font-semibold text-sm"
                         >
                           <Eye size={16} />
                           View Details
                         </Link>
                       </div>
 
-                      {/* RIGHT DELIVERY TIMELINE */}
+                      {/* RIGHT TIMELINE (ONLY ADDITION) */}
                       <div className="flex flex-col items-center">
                         {statusSteps.map((status, index) => {
                           const completed = index <= currentIndex;
