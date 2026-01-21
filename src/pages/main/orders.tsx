@@ -7,19 +7,21 @@ import {
   Calendar,
   MapPin,
   CreditCard,
-  Truck
+  Truck,
 } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 
-// Types
+/* Types */
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
 type PaymentStatus = "pending" | "completed" | "failed";
 
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
+
+  /* Filters (USED) */
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
   const [selectedPaymentStatus, setSelectedPaymentStatus] =
     useState<PaymentStatus | "all">("all");
@@ -30,6 +32,7 @@ export default function Orders() {
     selectedPaymentStatus === "all" ? undefined : selectedPaymentStatus
   );
 
+  /* Timeline steps */
   const orderSteps: OrderStatus[] = [
     "pending",
     "processing",
@@ -45,7 +48,8 @@ export default function Orders() {
     }
   }, [user, checkAuth, navigate]);
 
-  const getPaymentStatusColor = (status: string) => {
+  /* USED helper */
+  const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
       case "completed":
         return "bg-green-500/10 text-green-600 border-green-500/20";
@@ -58,17 +62,14 @@ export default function Orders() {
     }
   };
 
+  /* USED helper */
   const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return dateString;
-    }
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   if (!user) {
@@ -104,7 +105,48 @@ export default function Orders() {
             </p>
           </div>
 
-          {/* Orders List */}
+          {/* Filters (USES SETTERS) */}
+          <div className="mb-6 flex flex-wrap gap-4">
+            <div>
+              <label className="block text-xs text-muted uppercase mb-2">
+                Order Status
+              </label>
+              <select
+                value={selectedStatus}
+                onChange={(e) =>
+                  setSelectedStatus(e.target.value as OrderStatus | "all")
+                }
+                className="px-4 py-2 border border-line bg-background text-sm"
+              >
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs text-muted uppercase mb-2">
+                Payment Status
+              </label>
+              <select
+                value={selectedPaymentStatus}
+                onChange={(e) =>
+                  setSelectedPaymentStatus(e.target.value as PaymentStatus | "all")
+                }
+                className="px-4 py-2 border border-line bg-background text-sm"
+              >
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Orders */}
           {isLoading || loading ? (
             <div className="text-center py-16">
               <p className="text-muted">Loading orders...</p>
@@ -113,7 +155,6 @@ export default function Orders() {
             <div className="space-y-4">
               {orders.map((order) => {
                 const currentIndex = orderSteps.indexOf(order.status);
-                const isCancelled = order.status === "cancelled";
 
                 return (
                   <div
@@ -122,30 +163,30 @@ export default function Orders() {
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="text-lg md:text-xl font-semibold text-main uppercase font-space mb-2">
+                        <h3 className="text-lg font-semibold uppercase font-space mb-1">
                           {order.name}
                         </h3>
                         <p className="text-sm text-muted uppercase mb-1">
                           {order.category}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted mt-2">
+                        <div className="flex items-center gap-2 text-xs text-muted">
                           <Calendar size={14} />
-                          <span>Ordered on {formatDate(order.createdAt)}</span>
+                          Ordered on {formatDate(order.createdAt)}
                         </div>
                       </div>
 
                       {/* PRICE + ID + TIMELINE */}
                       <div className="text-right">
-                        <p className="text-xl font-bold text-main font-space mb-1">
+                        <p className="text-xl font-bold mb-1">
                           ₦{order.totalPrice.toLocaleString()}
                         </p>
                         <p className="text-sm text-muted uppercase mb-2">
                           #{order.id.slice(-8).toUpperCase()}
                         </p>
 
-                        {/* ✅ TIMELINE UNDER ID */}
-                        {!isCancelled && (
-                          <div className="flex flex-col items-end">
+                        {/* TIMELINE UNDER ID */}
+                        {order.status !== "cancelled" && (
+                          <div className="flex flex-col items-end gap-1">
                             {orderSteps.map((step, index) => {
                               const completed = index <= currentIndex;
                               return (
@@ -175,14 +216,56 @@ export default function Orders() {
                       </div>
                     </div>
 
+                    {/* Payment badge (USES getPaymentStatusColor) */}
+                    <div className="mb-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs uppercase border ${getPaymentStatusColor(
+                          order.paymentStatus
+                        )}`}
+                      >
+                        Payment: {order.paymentStatus}
+                      </span>
+                    </div>
+
+                    {/* Address + Payment method (USES MapPin, CreditCard, Truck) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                      <div>
+                        <p className="text-xs uppercase text-muted flex items-center gap-2">
+                          <MapPin size={14} />
+                          Delivery Address
+                        </p>
+                        <p>
+                          {order.deliveryAddress.street},{" "}
+                          {order.deliveryAddress.city},{" "}
+                          {order.deliveryAddress.state}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase text-muted flex items-center gap-2">
+                          {order.paymentMethod === "paystack" ? (
+                            <CreditCard size={14} />
+                          ) : (
+                            <Truck size={14} />
+                          )}
+                          Payment Method
+                        </p>
+                        <p className="uppercase">
+                          {order.paymentMethod === "paystack"
+                            ? "Paystack"
+                            : "Pay on Delivery"}
+                        </p>
+                      </div>
+                    </div>
+
                     {/* Actions */}
-                    <div className="flex items-center justify-between pt-4 border-t border-line mt-4">
+                    <div className="flex items-center justify-between pt-4 border-t border-line">
                       <Link
                         to={`/orders/${order.id}`}
-                        className="flex items-center gap-2 text-main font-space font-semibold uppercase text-sm hover:text-main/80 transition-colors"
+                        className="flex items-center gap-2 uppercase text-sm font-semibold"
                       >
-                        <Eye size={18} />
-                        <span>View Details</span>
+                        <Eye size={16} />
+                        View Details
                       </Link>
                     </div>
                   </div>
