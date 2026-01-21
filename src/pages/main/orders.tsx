@@ -1,97 +1,44 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
-import { 
-  Package, 
-  ArrowLeft, 
-  Eye, 
-  Calendar, 
-  MapPin, 
-  CreditCard, 
+import {
+  Package,
+  ArrowLeft,
+  Eye,
+  Calendar,
+  MapPin,
+  CreditCard,
   Truck,
-  Clock,       // Icon for Pending
-  CheckCircle, // Icon for Delivered
-  XCircle,     // Icon for Cancelled
-  RefreshCw  // Icon for Failed/Issues
+  Check,
+  Clock,
+  Loader2
 } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 
-// Define types locally to avoid TS errors if they aren't global
+// Define types locally in case they aren't global
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
 type PaymentStatus = "pending" | "completed" | "failed";
 
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
-  
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
-  
+
   const { useUserOrders, loading } = useOrder();
-  
   const { data: orders = [], isLoading } = useUserOrders(
     selectedStatus === "all" ? undefined : (selectedStatus as OrderStatus),
     selectedPaymentStatus === "all" ? undefined : (selectedPaymentStatus as PaymentStatus)
   );
 
-  // Check auth on mount
   useEffect(() => {
     if (!user) {
       checkAuth().then((authUser) => {
-        if (!authUser) {
-          navigate("/auth");
-        }
+        if (!authUser) navigate("/auth");
       });
     }
   }, [user, checkAuth, navigate]);
-
-  // JUMIA STYLE: Helper to get Icon and specific color styles
-  const getStatusDetails = (status: OrderStatus) => {
-    switch (status) {
-      case "pending":
-        return {
-          icon: Clock,
-          label: "Order Placed",
-          // Jumia uses Orange/Yellow for pending
-          className: "text-orange-600 bg-orange-50 border-orange-200"
-        };
-      case "processing":
-        return {
-          icon: RefreshCw,
-          label: "Processing",
-          // Blue for processing
-          className: "text-blue-600 bg-blue-50 border-blue-200"
-        };
-      case "shipped":
-        return {
-          icon: Truck,
-          label: "Out for Delivery",
-          // Purple or Dark Blue for shipping
-          className: "text-purple-600 bg-purple-50 border-purple-200"
-        };
-      case "delivered":
-        return {
-          icon: CheckCircle,
-          label: "Delivered",
-          // Green for success
-          className: "text-green-600 bg-green-50 border-green-200"
-        };
-      case "cancelled":
-        return {
-          icon: XCircle,
-          label: "Cancelled",
-          // Red for cancelled
-          className: "text-red-600 bg-red-50 border-red-200"
-        };
-      default:
-        return {
-          icon: Package,
-          label: status,
-          className: "text-gray-600 bg-gray-50 border-gray-200"
-        };
-    }
-  };
 
   const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
@@ -113,6 +60,25 @@ export default function Orders() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  // ✅ Jumia Style Order Steps
+  const orderSteps: OrderStatus[] = [
+    "pending",
+    "processing",
+    "shipped",
+    "delivered",
+  ];
+
+  // Helper to get icon for specific step
+  const getStepIcon = (step: string) => {
+    switch (step) {
+      case "pending": return Clock;
+      case "processing": return Loader2;
+      case "shipped": return Truck;
+      case "delivered": return Check;
+      default: return Package;
+    }
   };
 
   if (!user) {
@@ -211,18 +177,16 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
-                // Determine styling based on status
-                const statusDetails = getStatusDetails(order.status as OrderStatus);
-                const StatusIcon = statusDetails.icon;
+                const currentIndex = orderSteps.indexOf(order.status as OrderStatus);
 
                 return (
                   <div
                     key={order.id}
                     className="bg-secondary p-6 md:p-8 border border-line hover:border-main/30 transition-all"
                   >
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                    <div className="flex flex-col md:flex-row gap-6 md:gap-8">
                       
-                      {/* LEFT SIDE: Order Info */}
+                      {/* --- LEFT SIDE: Order Info --- */}
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-4">
                           <div>
@@ -237,33 +201,17 @@ export default function Orders() {
                               <span>Ordered on {formatDate(order.createdAt)}</span>
                             </div>
                           </div>
-                          
-                          {/* RIGHT SIDE: Price, ID, and NOW Status underneath */}
-                          <div className="text-right flex flex-col items-end">
-                            {/* 1. Price */}
-                            <p className="text-xl font-bold text-main font-space">
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-main font-space mb-2">
                               ₦{order.totalPrice.toLocaleString()}
                             </p>
-                            
-                            {/* 2. Order ID */}
-                            <p className="text-xs text-muted uppercase mb-3">
+                            <p className="text-sm text-muted uppercase">
                               #{order.id.slice(-8).toUpperCase()}
                             </p>
-
-                            {/* 3. NEW STATUS INDICATOR (Below Price) */}
-                            <div className={`
-                              flex items-center gap-2 px-3 py-1.5 rounded-md border 
-                              ${statusDetails.className}
-                            `}>
-                              <StatusIcon size={14} className="stroke-[2.5]" />
-                              <span className="text-xs font-space font-bold uppercase tracking-wide">
-                                {statusDetails.label}
-                              </span>
-                            </div>
                           </div>
                         </div>
 
-                        {/* Status Badges (Payment Only - Left side) */}
+                        {/* Status Badges - Removed Status Text, kept Payment Status */}
                         <div className="flex flex-wrap gap-2 mb-4">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border ${getPaymentStatusColor(
@@ -323,24 +271,57 @@ export default function Orders() {
                               {order.paymentMethod === "paystack" ? "Paystack" : "Pay on Delivery"}
                             </p>
                           </div>
-                          {order.sizes && (
-                            <div>
-                              <p className="text-muted font-space uppercase text-xs mb-1">Size</p>
-                              <p className="text-main">{order.sizes}</p>
-                            </div>
-                          )}
-                          {order.colors && (
-                            <div>
-                              <p className="text-muted font-space uppercase text-xs mb-1">Color</p>
-                              <p className="text-main">{order.colors}</p>
-                            </div>
-                          )}
                         </div>
                       </div>
+
+                      {/* --- RIGHT SIDE: Vertical Timeline --- */}
+                      {/* This is the code you wanted integrated on the right */}
+                      <div className="flex flex-col items-center justify-center pt-4 md:pt-0 md:pl-8 md:border-l border-line min-w-[100px]">
+                        {orderSteps.map((step, index) => {
+                          const completed = index <= currentIndex;
+                          const StepIcon = getStepIcon(step); // Dynamic icon based on step
+                          
+                          return (
+                            <div
+                              key={step}
+                              className="flex flex-col items-center text-center relative"
+                            >
+                              {/* Circle Icon */}
+                              <div
+                                className={`w-7 h-7 rounded-full border flex items-center justify-center z-10 transition-colors duration-300
+                                  ${
+                                    completed
+                                      ? "bg-green-600 border-green-600 text-white"
+                                      : "bg-background border-line text-muted"
+                                  }`}
+                              >
+                                <StepIcon size={12} strokeWidth={3} />
+                              </div>
+                              
+                              {/* Text Label */}
+                              <span className={`text-[10px] uppercase font-bold mt-1 mb-1 tracking-wider ${completed ? 'text-green-600' : 'text-muted'}`}>
+                                {step}
+                              </span>
+
+                              {/* Connecting Line (don't show for last item) */}
+                              {index !== orderSteps.length - 1 && (
+                                <div
+                                  className={`w-0.5 h-6 my-0.5 ${
+                                    index < currentIndex 
+                                      ? "bg-green-600" // Completed line
+                                      : "bg-line"      // Incomplete line
+                                  }`}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-between pt-4 border-t border-line">
+                    <div className="flex items-center justify-between pt-4 border-t border-line mt-4">
                       <Link
                         to={`/orders/${order.id}`}
                         className="flex items-center gap-2 text-main font-space font-semibold uppercase text-sm hover:text-main/80 transition-colors"
