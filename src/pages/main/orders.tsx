@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
 import {
-  Package,
   ArrowLeft,
   Eye,
   Calendar,
