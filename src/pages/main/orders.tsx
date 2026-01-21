@@ -13,15 +13,12 @@ import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 
-/* Types */
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
 type PaymentStatus = "pending" | "completed" | "failed";
 
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
-
-  /* Filters (USED) */
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
   const [selectedPaymentStatus, setSelectedPaymentStatus] =
     useState<PaymentStatus | "all">("all");
@@ -32,7 +29,6 @@ export default function Orders() {
     selectedPaymentStatus === "all" ? undefined : selectedPaymentStatus
   );
 
-  /* Timeline steps */
   const orderSteps: OrderStatus[] = [
     "pending",
     "processing",
@@ -48,7 +44,6 @@ export default function Orders() {
     }
   }, [user, checkAuth, navigate]);
 
-  /* USED helper */
   const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
       case "completed":
@@ -62,7 +57,6 @@ export default function Orders() {
     }
   };
 
-  /* USED helper */
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -75,7 +69,7 @@ export default function Orders() {
   if (!user) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-background py-8 md:py-12">
+        <div className="min-h-screen bg-background py-8">
           <div className="main">
             <p className="text-muted">Loading...</p>
           </div>
@@ -86,71 +80,10 @@ export default function Orders() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-background py-8 md:py-12">
+      <div className="min-h-screen bg-background py-8">
         <div className="main">
-          {/* Header */}
-          <div className="mb-8">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-muted hover:text-main mb-6 transition-colors font-space uppercase text-sm"
-            >
-              <ArrowLeft size={18} />
-              <span>Back</span>
-            </button>
-            <h1 className="text-2xl md:text-3xl font-bold text-main uppercase font-space mb-2">
-              My Orders
-            </h1>
-            <p className="text-muted text-sm md:text-base">
-              View and track all your orders
-            </p>
-          </div>
-
-          {/* Filters (USES SETTERS) */}
-          <div className="mb-6 flex flex-wrap gap-4">
-            <div>
-              <label className="block text-xs text-muted uppercase mb-2">
-                Order Status
-              </label>
-              <select
-                value={selectedStatus}
-                onChange={(e) =>
-                  setSelectedStatus(e.target.value as OrderStatus | "all")
-                }
-                className="px-4 py-2 border border-line bg-background text-sm"
-              >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs text-muted uppercase mb-2">
-                Payment Status
-              </label>
-              <select
-                value={selectedPaymentStatus}
-                onChange={(e) =>
-                  setSelectedPaymentStatus(e.target.value as PaymentStatus | "all")
-                }
-                className="px-4 py-2 border border-line bg-background text-sm"
-              >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Orders */}
           {isLoading || loading ? (
-            <div className="text-center py-16">
-              <p className="text-muted">Loading orders...</p>
-            </div>
+            <p className="text-center py-16 text-muted">Loading orders...</p>
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
@@ -159,17 +92,18 @@ export default function Orders() {
                 return (
                   <div
                     key={order.id}
-                    className="bg-secondary p-6 md:p-8 border border-line hover:border-main/30 transition-all"
+                    className="bg-secondary p-6 border border-line"
                   >
+                    {/* HEADER */}
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="text-lg font-semibold uppercase font-space mb-1">
+                        <h3 className="text-lg font-semibold uppercase">
                           {order.name}
                         </h3>
-                        <p className="text-sm text-muted uppercase mb-1">
+                        <p className="text-sm text-muted uppercase">
                           {order.category}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted">
+                        <div className="flex items-center gap-2 text-xs text-muted mt-2">
                           <Calendar size={14} />
                           Ordered on {formatDate(order.createdAt)}
                         </div>
@@ -177,20 +111,21 @@ export default function Orders() {
 
                       {/* PRICE + ID + TIMELINE */}
                       <div className="text-right">
-                        <p className="text-xl font-bold mb-1">
+                        <p className="text-xl font-bold">
                           ₦{order.totalPrice.toLocaleString()}
                         </p>
                         <p className="text-sm text-muted uppercase mb-2">
                           #{order.id.slice(-8).toUpperCase()}
                         </p>
 
-                        {/* TIMELINE UNDER ID */}
+                        {/* CONNECTED TIMELINE */}
                         {order.status !== "cancelled" && (
-                          <div className="flex flex-col items-end gap-1">
+                          <div className="flex flex-col items-end">
                             {orderSteps.map((step, index) => {
                               const completed = index <= currentIndex;
+
                               return (
-                                <div key={step} className="flex items-center gap-2">
+                                <div key={step} className="flex flex-col items-center">
                                   <div
                                     className={`w-4 h-4 rounded-full border flex items-center justify-center
                                       ${
@@ -201,13 +136,22 @@ export default function Orders() {
                                   >
                                     <Package size={10} />
                                   </div>
+
                                   <span
-                                    className={`text-[10px] uppercase font-bold ${
+                                    className={`text-[10px] uppercase font-bold mt-1 ${
                                       completed ? "text-green-600" : "text-muted"
                                     }`}
                                   >
                                     {step}
                                   </span>
+
+                                  {index !== orderSteps.length - 1 && (
+                                    <div
+                                      className={`w-px h-5 my-1 ${
+                                        completed ? "bg-green-600" : "bg-line"
+                                      }`}
+                                    />
+                                  )}
                                 </div>
                               );
                             })}
@@ -216,7 +160,7 @@ export default function Orders() {
                       </div>
                     </div>
 
-                    {/* Payment badge (USES getPaymentStatusColor) */}
+                    {/* PAYMENT BADGE */}
                     <div className="mb-3">
                       <span
                         className={`px-3 py-1 rounded-full text-xs uppercase border ${getPaymentStatusColor(
@@ -227,7 +171,32 @@ export default function Orders() {
                       </span>
                     </div>
 
-                    {/* Address + Payment method (USES MapPin, CreditCard, Truck) */}
+                    {/* ✅ PRODUCT IMAGES — RESTORED */}
+                    {order.images && order.images.length > 0 && (
+                      <div className="flex gap-2 mb-4">
+                        {order.images.slice(0, 3).map((image, index) => (
+                          <div
+                            key={index}
+                            className="w-16 h-16 bg-background overflow-hidden border border-line"
+                          >
+                            <img
+                              src={image}
+                              alt={order.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                        {order.images.length > 3 && (
+                          <div className="w-16 h-16 border border-line flex items-center justify-center">
+                            <span className="text-xs text-muted">
+                              +{order.images.length - 3}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ADDRESS + PAYMENT METHOD */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
                       <div>
                         <p className="text-xs uppercase text-muted flex items-center gap-2">
@@ -258,8 +227,8 @@ export default function Orders() {
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center justify-between pt-4 border-t border-line">
+                    {/* ACTION */}
+                    <div className="pt-4 border-t border-line flex justify-between">
                       <Link
                         to={`/orders/${order.id}`}
                         className="flex items-center gap-2 uppercase text-sm font-semibold"
