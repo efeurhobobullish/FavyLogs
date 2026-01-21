@@ -13,22 +13,14 @@ import {
 } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
-  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">(
-    "all"
-  );
-  const [selectedPaymentStatus, setSelectedPaymentStatus] =
-    useState<PaymentStatus | "all">("all");
 
   const { useUserOrders, loading } = useOrder();
-  const { data: orders = [], isLoading } = useUserOrders(
-    selectedStatus === "all" ? undefined : selectedStatus,
-    selectedPaymentStatus === "all" ? undefined : selectedPaymentStatus
-  );
+  const { data: orders = [], isLoading } = useUserOrders();
 
   useEffect(() => {
     if (!user) {
@@ -40,9 +32,9 @@ export default function Orders() {
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
       month: "short",
       day: "numeric",
-      year: "numeric",
     });
 
   const statusIndex = (status: OrderStatus) =>
@@ -62,19 +54,27 @@ export default function Orders() {
     <MainLayout>
       <div className="min-h-screen bg-background py-10">
         <div className="main">
+          {/* Header */}
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-muted hover:text-main mb-6 font-space uppercase text-sm"
           >
-            <ArrowLeft size={18} /> Back
+            <ArrowLeft size={18} />
+            Back
           </button>
 
           <h1 className="text-3xl font-bold text-main uppercase font-space mb-8">
             My Orders
           </h1>
 
+          {/* Orders */}
           {isLoading || loading ? (
             <p className="text-center text-muted py-20">Loading orders...</p>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-20">
+              <Package size={64} className="mx-auto text-muted mb-6" />
+              <p className="text-muted">No orders found</p>
+            </div>
           ) : (
             <div className="space-y-6">
               {orders.map((order) => {
@@ -83,13 +83,12 @@ export default function Orders() {
                 return (
                   <div
                     key={order.id}
-                    className="bg-secondary border border-line p-6"
+                    className="bg-secondary border border-line p-6 hover:border-main/30 transition-all"
                   >
-                    {/* MAIN ROW */}
                     <div className="flex items-start justify-between gap-8">
                       {/* LEFT CONTENT */}
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold uppercase font-space">
+                        <h3 className="text-xl font-bold uppercase font-space text-main">
                           {order.name}
                         </h3>
 
@@ -99,21 +98,23 @@ export default function Orders() {
 
                         <div className="flex items-center gap-2 text-xs text-muted mb-4">
                           <Calendar size={14} />
-                          Ordered {formatDate(order.createdAt)}
+                          Ordered on {formatDate(order.createdAt)}
                         </div>
 
-                        <p className="text-2xl font-bold mb-4">
+                        <p className="text-2xl font-bold text-main mb-4">
                           ₦{order.totalPrice.toLocaleString()}
                         </p>
 
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="uppercase text-xs text-muted flex items-center gap-1">
-                              <MapPin size={12} /> Address
+                              <MapPin size={12} />
+                              Delivery Address
                             </p>
-                            <p>
+                            <p className="text-main">
                               {order.deliveryAddress.street},{" "}
-                              {order.deliveryAddress.city}
+                              {order.deliveryAddress.city},{" "}
+                              {order.deliveryAddress.state}
                             </p>
                           </div>
 
@@ -124,19 +125,22 @@ export default function Orders() {
                               ) : (
                                 <Truck size={12} />
                               )}
-                              Payment
+                              Payment Method
                             </p>
-                            <p className="uppercase">
-                              {order.paymentMethod}
+                            <p className="text-main uppercase">
+                              {order.paymentMethod === "paystack"
+                                ? "Paystack"
+                                : "Pay on Delivery"}
                             </p>
                           </div>
                         </div>
 
                         <Link
                           to={`/orders/${order.id}`}
-                          className="inline-flex items-center gap-2 mt-6 text-main font-space uppercase font-semibold text-sm"
+                          className="inline-flex items-center gap-2 mt-6 text-main font-space uppercase font-semibold text-sm hover:text-main/80"
                         >
-                          <Eye size={16} /> View Details
+                          <Eye size={16} />
+                          View Details
                         </Link>
                       </div>
 
@@ -148,7 +152,7 @@ export default function Orders() {
                           { label: "Shipped", icon: Truck },
                           { label: "Delivered", icon: Check },
                         ].map((step, index) => {
-                          const done = index < current;
+                          const completed = index < current;
                           const active = index === current;
 
                           return (
@@ -157,14 +161,14 @@ export default function Orders() {
                               className="flex flex-col items-center"
                             >
                               <div
-                                className={`w-10 h-10 rounded-full border flex items-center justify-center
-                                ${
-                                  done
-                                    ? "bg-green-500 border-green-500 text-white"
-                                    : active
-                                    ? "bg-main border-main text-background"
-                                    : "bg-background border-line text-muted"
-                                }`}
+                                className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all
+                                  ${
+                                    completed
+                                      ? "bg-green-500 border-green-500 text-white"
+                                      : active
+                                      ? "bg-main border-main text-background"
+                                      : "bg-background border-line text-muted"
+                                  }`}
                               >
                                 <step.icon size={18} />
                               </div>
@@ -172,7 +176,9 @@ export default function Orders() {
                               {index !== 3 && (
                                 <div
                                   className={`w-px h-10 ${
-                                    done ? "bg-green-500" : "bg-line"
+                                    completed
+                                      ? "bg-green-500"
+                                      : "bg-line"
                                   }`}
                                 />
                               )}
