@@ -1,111 +1,103 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
-import { ArrowLeft, Eye } from "lucide-react";
+import { Package, ArrowLeft, Eye, Calendar, MapPin, CreditCard, Truck } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
-  const { useUserOrders, loading } = useOrder();
-  const [status, setStatus] = useState<"all" | OrderStatus>("all");
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
 
+  const { useUserOrders, loading } = useOrder();
   const { data: orders = [], isLoading } = useUserOrders(
-    status === "all" ? undefined : status
+    selectedStatus === "all" ? undefined : selectedStatus,
+    selectedPaymentStatus === "all" ? undefined : selectedPaymentStatus
   );
 
   useEffect(() => {
     if (!user) {
-      checkAuth().then((u) => !u && navigate("/auth"));
+      checkAuth().then((authUser) => {
+        if (!authUser) navigate("/auth");
+      });
     }
   }, [user, checkAuth, navigate]);
 
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
 
-  const statusBadge = (s: OrderStatus) => {
-    if (s === "completed") return "text-green-600";
-    if (s === "failed") return "text-red-500";
-    return "text-yellow-600";
-  };
-
-  if (!user) return null;
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="main py-10">
+          <p className="text-muted">Loading...</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="min-h-screen bg-background py-8">
         <div className="main">
-
-          {/* Header */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted mb-4 text-sm"
+            className="flex items-center gap-2 text-muted mb-6 text-sm"
           >
-            <ArrowLeft size={16} /> Back
+            <ArrowLeft size={18} /> Back
           </button>
 
-          <h1 className="text-2xl font-semibold mb-4">My Orders</h1>
+          <h1 className="text-2xl font-bold text-main mb-2">My Orders</h1>
+          <p className="text-muted mb-6">View and track all your orders</p>
 
-          {/* Filter */}
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as any)}
-            className="mb-5 px-4 py-2 border border-line bg-background text-sm"
-          >
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-            <option value="failed">Failed</option>
-          </select>
-
-          {/* Orders */}
           {isLoading || loading ? (
-            <p className="text-muted">Loading…</p>
+            <p className="text-muted">Loading orders...</p>
           ) : orders.length === 0 ? (
-            <p className="text-muted">No orders yet.</p>
+            <div className="text-center py-16">
+              <Package size={48} className="mx-auto text-muted mb-4" />
+              <p className="text-muted">No orders found</p>
+              <Link to="/shop" className="underline text-sm">
+                Start shopping
+              </Link>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {orders.map((order) => (
                 <div
-                  key={order._id}
-                  className="border border-line bg-secondary px-4 py-3"
+                  key={order.id}
+                  className="bg-secondary border border-line p-5"
                 >
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between mb-2">
                     <div>
-                      <p className="font-medium">{order.productName}</p>
-                      <p className="text-xs text-muted">
-                        {formatDate(order.createdAt)}
-                      </p>
+                      <p className="font-semibold">{order.name}</p>
+                      <p className="text-xs text-muted">{order.category}</p>
                     </div>
-
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        ₦{order.totalPrice.toLocaleString()}
-                      </p>
-                      <p className={`text-xs ${statusBadge(order.status)}`}>
-                        {order.status}
-                      </p>
-                    </div>
+                    <p className="font-bold">
+                      ₦{order.totalPrice.toLocaleString()}
+                    </p>
                   </div>
 
-                  <div className="mt-2 text-right">
-                    <Link
-                      to={`/orders/${order._id}`}
-                      className="text-sm underline"
-                    >
-                      View
-                    </Link>
-                  </div>
+                  <p className="text-xs text-muted flex items-center gap-1">
+                    <Calendar size={14} />
+                    {formatDate(order.createdAt)}
+                  </p>
+
+                  <Link
+                    to={`/orders/${order.id}`}
+                    className="inline-flex items-center gap-1 mt-3 text-sm underline"
+                  >
+                    <Eye size={16} /> View Details
+                  </Link>
                 </div>
               ))}
             </div>
           )}
-
         </div>
       </div>
     </MainLayout>
