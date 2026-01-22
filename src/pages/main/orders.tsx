@@ -1,308 +1,143 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
-import { Package, ArrowLeft, Eye, Calendar, MapPin, CreditCard, Truck } from "lucide-react";
+import { ArrowLeft, Eye, CreditCard, Clock } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Orders() {
   const navigate = useNavigate();
   const { user, checkAuth } = useAuth();
-  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
-  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
-  
   const { useUserOrders, loading } = useOrder();
+
+  const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
+
   const { data: orders = [], isLoading } = useUserOrders(
-    selectedStatus === "all" ? undefined : selectedStatus,
-    selectedPaymentStatus === "all" ? undefined : selectedPaymentStatus
+    statusFilter === "all" ? undefined : statusFilter
   );
 
-  // Check auth on mount
   useEffect(() => {
     if (!user) {
-      checkAuth().then((authUser) => {
-        if (!authUser) {
-          navigate("/auth");
-        }
-      });
+      checkAuth().then((u) => !u && navigate("/auth"));
     }
   }, [user, checkAuth, navigate]);
 
-  const getStatusColor = (status: OrderStatus) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
-      case "processing":
-        return "bg-blue-500/10 text-blue-600 border-blue-500/20";
-      case "shipped":
-        return "bg-purple-500/10 text-purple-600 border-purple-500/20";
-      case "delivered":
-        return "bg-green-500/10 text-green-600 border-green-500/20";
-      case "cancelled":
-        return "bg-red-500/10 text-red-600 border-red-500/20";
-      default:
-        return "bg-gray-500/10 text-gray-600 border-gray-500/20";
-    }
-  };
-
-  const getPaymentStatusColor = (status: PaymentStatus) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-500/10 text-green-600 border-green-500/20";
-      case "pending":
-        return "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
-      case "failed":
-        return "bg-red-500/10 text-red-600 border-red-500/20";
-      default:
-        return "bg-gray-500/10 text-gray-600 border-gray-500/20";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
+
+  const statusLabel = (s: OrderStatus) => {
+    switch (s) {
+      case "awaiting_payment":
+        return "Awaiting Payment";
+      case "paid":
+        return "Payment Received";
+      case "account_assigned":
+        return "Account Assigned";
+      case "credentials_available":
+        return "Login Details Ready";
+      case "completed":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
+      default:
+        return s;
+    }
   };
 
-  if (!user) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen bg-background py-8 md:py-12">
-          <div className="main">
-            <p className="text-muted">Loading...</p>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
+  if (!user) return null;
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-background py-8 md:py-12">
+      <div className="min-h-screen bg-background py-8">
         <div className="main">
           {/* Header */}
-          <div className="mb-8">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-muted hover:text-main mb-6 transition-colors font-space uppercase text-sm"
-            >
-              <ArrowLeft size={18} />
-              <span>Back</span>
-            </button>
-            <h1 className="text-2xl md:text-3xl font-bold text-main uppercase font-space mb-2">
-              My Orders
-            </h1>
-            <p className="text-muted text-sm md:text-base">
-              View and track all your orders
-            </p>
-          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-muted mb-6 text-sm font-space uppercase"
+          >
+            <ArrowLeft size={16} /> Back
+          </button>
 
-          {/* Filters */}
-          <div className="mb-6 flex flex-wrap gap-4">
-            <div>
-              <label className="block text-xs text-muted font-space uppercase mb-2">
-                Order Status
-              </label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus | "all")}
-                className="px-4 py-2 border border-line bg-background text-main font-space focus:outline-none focus:border-main transition-colors text-sm"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-muted font-space uppercase mb-2">
-                Payment Status
-              </label>
-              <select
-                value={selectedPaymentStatus}
-                onChange={(e) => setSelectedPaymentStatus(e.target.value as PaymentStatus | "all")}
-                className="px-4 py-2 border border-line bg-background text-main font-space focus:outline-none focus:border-main transition-colors text-sm"
-              >
-                <option value="all">All Payments</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
-              </select>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold font-space mb-1">My Orders</h1>
+          <p className="text-muted text-sm mb-6">
+            View your purchased accounts and login details
+          </p>
 
-          {/* Orders List */}
+          {/* Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="mb-6 px-4 py-2 border border-line bg-background text-sm"
+          >
+            <option value="all">All Orders</option>
+            <option value="awaiting_payment">Awaiting Payment</option>
+            <option value="paid">Paid</option>
+            <option value="account_assigned">Account Assigned</option>
+            <option value="credentials_available">Credentials Ready</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+
+          {/* Orders */}
           {isLoading || loading ? (
-            <div className="text-center py-16">
-              <p className="text-muted">Loading orders...</p>
-            </div>
+            <p className="text-muted">Loading orders…</p>
           ) : orders.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 mx-auto mb-6 bg-secondary rounded-full flex items-center justify-center">
-                <Package size={48} className="text-muted" />
-              </div>
-              <h2 className="text-2xl font-bold text-main uppercase font-space mb-4">
-                No Orders Found
-              </h2>
-              <p className="text-muted mb-8 max-w-md mx-auto">
-                You haven't placed any orders yet. Start shopping to see your orders here!
-              </p>
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors"
-              >
-                <Package size={18} />
-                <span>Start Shopping</span>
-              </Link>
-            </div>
+            <p className="text-muted">No orders found.</p>
           ) : (
             <div className="space-y-4">
               {orders.map((order) => (
                 <div
-                  key={order.id}
-                  className="bg-secondary p-6 md:p-8 border border-line hover:border-main/30 transition-all"
+                  key={order._id}
+                  className="border border-line bg-secondary p-5"
                 >
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                    {/* Order Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg md:text-xl font-semibold text-main uppercase font-space mb-2">
-                            {order.name}
-                          </h3>
-                          <p className="text-sm text-muted font-space uppercase mb-1">
-                            {order.category}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted mt-2">
-                            <Calendar size={14} />
-                            <span>Ordered on {formatDate(order.createdAt)}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-main font-space mb-2">
-                            ₦{order.totalPrice.toLocaleString()}
-                          </p>
-                          <p className="text-sm text-muted">
-                            Order #{order.id.slice(-8).toUpperCase()}
-                          </p>
-                        </div>
-                      </div>
+                  <div className="flex justify-between gap-4 mb-3">
+                    <div>
+                      <h3 className="font-semibold">{order.productName}</h3>
+                      <p className="text-xs text-muted">{order.category}</p>
+                      <p className="text-xs text-muted">
+                        Ordered {formatDate(order.createdAt)}
+                      </p>
+                    </div>
 
-                      {/* Status Badges */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border ${getStatusColor(
-                            order.status
-                          )}`}
-                        >
-                          {order.status}
-                        </span>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border ${getPaymentStatusColor(
-                            order.paymentStatus
-                          )}`}
-                        >
-                          Payment: {order.paymentStatus}
-                        </span>
-                      </div>
-
-                      {/* Product Images */}
-                      {order.images && order.images.length > 0 && (
-                        <div className="flex gap-2 mb-4">
-                          {order.images.slice(0, 3).map((image, index) => (
-                            <div
-                              key={index}
-                              className="w-16 h-16 bg-background overflow-hidden border border-line relative"
-                            >
-                              <img
-                                src={image}
-                                alt={`${order.name} - Image ${index + 1}`}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const img = e.target as HTMLImageElement;
-                                  img.style.display = "none";
-                                  const placeholder = img.nextElementSibling as HTMLElement;
-                                  if (placeholder) {
-                                    placeholder.style.display = "flex";
-                                  }
-                                }}
-                              />
-                              {/* Placeholder (hidden by default, shown on error) */}
-                              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center">
-                                <span className="text-muted text-xs font-space uppercase text-center px-1">
-                                  {order.name.substring(0, 10)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                          {order.images.length > 3 && (
-                            <div className="w-16 h-16 bg-background border border-line flex items-center justify-center">
-                              <span className="text-xs text-muted font-space">
-                                +{order.images.length - 3}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Order Details */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted font-space uppercase text-xs mb-1 flex items-center gap-2">
-                            <MapPin size={14} />
-                            Delivery Address
-                          </p>
-                          <p className="text-main">
-                            {order.deliveryAddress.street}, {order.deliveryAddress.city}, {order.deliveryAddress.state}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted font-space uppercase text-xs mb-1 flex items-center gap-2">
-                            {order.paymentMethod === "paystack" ? (
-                              <CreditCard size={14} />
-                            ) : (
-                              <Truck size={14} />
-                            )}
-                            Payment Method
-                          </p>
-                          <p className="text-main font-space uppercase">
-                            {order.paymentMethod === "paystack" ? "Paystack" : "Pay on Delivery"}
-                          </p>
-                        </div>
-                        {order.sizes && (
-                          <div>
-                            <p className="text-muted font-space uppercase text-xs mb-1">Size</p>
-                            <p className="text-main">{order.sizes}</p>
-                          </div>
-                        )}
-                        {order.colors && (
-                          <div>
-                            <p className="text-muted font-space uppercase text-xs mb-1">Color</p>
-                            <p className="text-main">{order.colors}</p>
-                          </div>
-                        )}
-                      </div>
+                    <div className="text-right">
+                      <p className="font-bold">
+                        ₦{order.totalPrice.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted">
+                        #{order._id.slice(-8).toUpperCase()}
+                      </p>
                     </div>
                   </div>
 
+                  {/* Status */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="px-3 py-1 text-xs border border-line">
+                      {statusLabel(order.status)}
+                    </span>
+                    <span className="px-3 py-1 text-xs border border-line flex items-center gap-1">
+                      <CreditCard size={12} />
+                      {order.paymentStatus}
+                    </span>
+                  </div>
+
                   {/* Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t border-line">
+                  <div className="flex justify-between items-center border-t border-line pt-3">
                     <Link
-                      to={`/orders/${order.id}`}
-                      className="flex items-center gap-2 text-main font-space font-semibold uppercase text-sm hover:text-main/80 transition-colors"
+                      to={`/orders/${order._id}`}
+                      className="flex items-center gap-2 text-sm font-space"
                     >
-                      <Eye size={18} />
-                      <span>View Details</span>
+                      <Eye size={16} /> View Details
                     </Link>
-                    {order.status === "pending" && order.paymentStatus === "pending" && (
-                      <button className="px-4 py-2 border border-line text-main font-space font-semibold uppercase text-sm hover:bg-secondary transition-colors">
-                        Cancel Order
-                      </button>
+
+                    {order.status === "credentials_available" && (
+                      <span className="flex items-center gap-1 text-xs text-green-600">
+                        <Clock size={12} />
+                        Login ready
+                      </span>
                     )}
                   </div>
                 </div>
