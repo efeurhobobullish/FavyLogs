@@ -19,20 +19,20 @@ const isNewProduct = (createdAt: string): boolean => {
 };
 
 /* ===============================
-   CATEGORIES — FAVYLOGS
+   FAVYLOGS CATEGORIES
 ================================ */
 const categories = [
   "All",
-  "Facebook Logs",
-  "Instagram Logs",
+  "Facebook Accounts",
+  "Instagram Accounts",
   "TikTok Accounts",
   "Snapchat Accounts",
-  "Twitter (X) Accounts",
-  "Gmail / Email Logs",
+  "Twitter Accounts",
+  "Gmail Accouns",
   "VPN Accounts",
   "Streaming Accounts",
-  "AI / ChatGPT Accounts",
-  "Other Digital Logs",
+  "AI Accounts",
+  "Other Accounts",
 ];
 
 type SortOption =
@@ -104,8 +104,8 @@ export default function Shop() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen py-10">
-        <div className="main space-y-10">
+      <div className="min-h-screen py-8 md:py-12">
+        <div className="main space-y-8">
 
           {/* ===============================
              HEADER
@@ -114,21 +114,24 @@ export default function Shop() {
             <h1 className="text-2xl md:text-3xl font-bold font-space uppercase">
               Favylogs Marketplace
             </h1>
-            <p className="text-muted text-sm mt-2">
-              Verified social media logs, digital accounts, VPNs, and premium tools.
+            <p className="text-muted text-sm md:text-base mt-2">
+              Browse verified logs, social media accounts, VPNs, and premium tools.
             </p>
           </div>
 
           {/* ===============================
-             SEARCH
+             SEARCH BAR
           ================================ */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+            <Search
+              size={20}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+            />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search logs, accounts, VPNs, tools..."
-              className="w-full pl-12 pr-4 py-3 border border-line bg-background"
+              className="w-full pl-12 pr-4 py-3 border border-line bg-background text-main"
             />
             {searchQuery && (
               <button
@@ -141,106 +144,121 @@ export default function Shop() {
           </div>
 
           {/* ===============================
-             FILTER BAR
+             FILTERS + CONTROLS
           ================================ */}
-          <div className="flex flex-wrap items-center gap-4 justify-between">
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 border"
-              >
-                <SlidersHorizontal size={16} />
-                Filters
-              </button>
+          <div className="flex flex-col gap-4">
 
-              {categories.map((cat) => (
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              {/* Filters + Categories */}
+              <div className="flex flex-wrap items-center gap-3">
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 text-sm uppercase border ${
-                    selectedCategory === cat
-                      ? "bg-black text-white"
-                      : "bg-background"
-                  }`}
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2 px-4 py-2 border border-line bg-background text-sm font-space uppercase"
                 >
-                  {cat}
+                  <SlidersHorizontal size={16} />
+                  Filters
                 </button>
-              ))}
-            </div>
 
-            <div className="flex items-center gap-3">
-              <select
-                value={sortBy}
-                onChange={(e) =>
-                  setSortBy(e.target.value as SortOption)
-                }
-                className="border px-3 py-2"
-              >
-                <option value="default">Newest</option>
-                <option value="price-low">Price: Low → High</option>
-                <option value="price-high">Price: High → Low</option>
-                <option value="name-asc">Name A–Z</option>
-                <option value="name-desc">Name Z–A</option>
-              </select>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2 text-sm font-space uppercase border border-line transition ${
+                      selectedCategory === cat
+                        ? "bg-primary text-white dark:text-[#171717]"
+                        : "bg-secondary text-main"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
 
-              <div className="flex border">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 ${
-                    viewMode === "grid" ? "bg-black text-white" : ""
-                  }`}
+              {/* Sort & View */}
+              <div className="flex items-center gap-3">
+                <select
+                  value={sortBy}
+                  onChange={(e) =>
+                    setSortBy(e.target.value as SortOption)
+                  }
+                  className="px-4 py-2 border border-line bg-background text-sm"
                 >
-                  <Grid3x3 size={16} />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 ${
-                    viewMode === "list" ? "bg-black text-white" : ""
-                  }`}
-                >
-                  <List size={16} />
-                </button>
+                  <option value="default">Newest</option>
+                  <option value="price-low">Price: Low → High</option>
+                  <option value="price-high">Price: High → Low</option>
+                  <option value="name-asc">Name A–Z</option>
+                  <option value="name-desc">Name Z–A</option>
+                </select>
+
+                <div className="flex border border-line">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`p-2 ${
+                      viewMode === "grid"
+                        ? "bg-primary text-white dark:text-[#171717]"
+                        : "bg-background"
+                    }`}
+                  >
+                    <Grid3x3 size={16} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`p-2 ${
+                      viewMode === "list"
+                        ? "bg-primary text-white dark:text-[#171717]"
+                        : "bg-background"
+                    }`}
+                  >
+                    <List size={16} />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* ===============================
-             ACTIVE FILTERS
-          ================================ */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap gap-2 text-sm">
-              <span className="text-muted">Active filters:</span>
-              {searchQuery && <span className="px-2 py-1 border">Search</span>}
-              {selectedCategory !== "All" && (
-                <span className="px-2 py-1 border">{selectedCategory}</span>
-              )}
-              <button
-                onClick={clearFilters}
-                className="px-3 py-1 bg-black text-white"
-              >
-                Clear All
-              </button>
-            </div>
-          )}
+            {/* Active Filters */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-muted">Active filters:</span>
+                {searchQuery && (
+                  <span className="px-3 py-1 bg-secondary border border-line">
+                    Search
+                  </span>
+                )}
+                {selectedCategory !== "All" && (
+                  <span className="px-3 py-1 bg-secondary border border-line">
+                    {selectedCategory}
+                  </span>
+                )}
+                <button
+                  onClick={clearFilters}
+                  className="px-3 py-1 bg-primary text-white dark:text-[#171717]"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* ===============================
              PRODUCTS
           ================================ */}
           {isLoading ? (
-            <div className="text-center py-20">Loading items…</div>
+            <div className="text-center py-16 text-muted">
+              Loading marketplace items…
+            </div>
           ) : error ? (
-            <div className="text-center py-20">
-              Failed to load marketplace items.
+            <div className="text-center py-16 text-muted">
+              Failed to load items. Please try again.
             </div>
           ) : filteredAndSortedProducts.length === 0 ? (
-            <div className="text-center py-20">
+            <div className="text-center py-16 text-muted">
               No logs or digital items found.
             </div>
           ) : (
             <div
               className={
                 viewMode === "grid"
-                  ? "grid grid-cols-2 lg:grid-cols-3 gap-8"
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
                   : "space-y-6"
               }
             >
@@ -253,7 +271,7 @@ export default function Shop() {
                 return (
                   <div
                     key={product.id}
-                    className={`group relative border p-4 ${
+                    className={`group relative border border-line bg-background p-4 ${
                       viewMode === "list" ? "flex gap-6" : ""
                     }`}
                     onMouseEnter={() => setHoveredProduct(product.id)}
@@ -264,36 +282,38 @@ export default function Shop() {
                         <img
                           src={image}
                           alt={product.name}
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       )}
 
                       {isNewProduct(product.createdAt) && (
-                        <span className="absolute top-3 left-3 bg-white text-black text-xs px-2 py-1 uppercase">
+                        <span className="absolute top-3 left-3 px-2 py-1 bg-background text-main text-xs font-space uppercase border border-line">
                           New
                         </span>
                       )}
 
                       <Link
                         to={`/shop/${product.id}`}
-                        className={`absolute inset-0 flex items-center justify-center bg-black/40 transition ${
+                        className={`absolute inset-0 center bg-foreground/60 transition ${
                           hoveredProduct === product.id
                             ? "opacity-100"
                             : "opacity-0"
                         }`}
                       >
-                        <span className="bg-white text-black px-5 py-2 text-sm uppercase">
+                        <span className="px-5 py-2 bg-primary text-white dark:text-[#171717] text-sm font-space uppercase">
                           View Details
                         </span>
                       </Link>
                     </div>
 
                     <div className="mt-4 space-y-1">
-                      <p className="text-xs uppercase text-muted">
+                      <p className="text-xs uppercase text-muted font-space">
                         {product.category}
                       </p>
-                      <h3 className="font-semibold">{product.name}</h3>
-                      <p className="font-bold">
+                      <h3 className="text-sm md:text-lg font-semibold text-main">
+                        {product.name}
+                      </h3>
+                      <p className="text-lg font-bold font-space">
                         {formatPrice(product.price)}
                       </p>
                     </div>
